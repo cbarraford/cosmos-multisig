@@ -181,7 +181,7 @@ func NewNameServiceApp(logger log.Logger, db dbm.DB) *nameServiceApp {
 	// The NameserviceKeeper is the Keeper from the module for this tutorial
 	// It handles interactions with the namestore
 	app.nsKeeper = multisig.NewKeeper(
-		//app.bankKeeper,
+		app.bankKeeper,
 		app.keyNS,
 		app.cdc,
 	)

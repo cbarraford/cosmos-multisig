@@ -18,9 +18,9 @@ var _ = Suite(&KeeperSuite{})
 func (s *KeeperSuite) TestKeeper(c *C) {
 	cdc := parsec.MakeCodec()
 	storeKey := ctype.NewKVStoreKey("test")
-	//bank := parsec.NewBankKeeper()
+	bank := parsec.NewBankKeeper()
 
-	keeper := NewKeeper(storeKey, cdc)
+	keeper := NewKeeper(bank, storeKey, cdc)
 
 	wallet := types.NewMultiSigWallet("test-wallet", nil, 5)
 
