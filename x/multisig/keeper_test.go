@@ -22,9 +22,10 @@ func (s *KeeperSuite) TestKeeper(c *C) {
 
 	keeper := NewKeeper(bank, storeKey, cdc)
 
-	wallet := types.NewMultiSigWallet("test-wallet", nil, 5)
+	wallet, err := types.NewMultiSigWallet("test-wallet", []string{"foo", "bar", "baz"}, 0)
+	c.Assert(err, IsNil)
 
 	keeper.SetWallet(parsec.MockContext{}, "test-wallet", wallet)
 	wallet = keeper.GetWallet(parsec.MockContext{}, "test-wallet")
-	c.Assert(wallet.MinSigTx, Equals, 5)
+	c.Assert(wallet.MinSigTx, Equals, 2, Commentf("%s", wallet))
 }

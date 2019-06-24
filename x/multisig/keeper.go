@@ -1,6 +1,8 @@
 package multisig
 
 import (
+	"fmt"
+
 	"github.com/cbarraford/parsec"
 	"github.com/cosmos/cosmos-sdk/codec"
 
@@ -26,6 +28,7 @@ func NewKeeper(coinKeeper parsec.Bank, storeKey sdk.StoreKey, cdc *codec.Codec) 
 }
 
 func (k Keeper) GetWallet(ctx parsec.Context, name string) MultiSigWallet {
+	name = fmt.Sprintf("wallet-%s", name)
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(name)) {
 		return MultiSigWallet{}
@@ -38,12 +41,12 @@ func (k Keeper) GetWallet(ctx parsec.Context, name string) MultiSigWallet {
 
 // Sets the entire wallet metadata struct for a multisig wallet
 func (k Keeper) SetWallet(ctx parsec.Context, name string, wallet MultiSigWallet) {
+	name = fmt.Sprintf("wallet-%s", name)
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(name), k.cdc.MustMarshalBinaryBare(wallet))
 }
 
-// Get an iterator over all names in which the keys are the names and the values are the whois
-func (k Keeper) GetNamesIterator(ctx sdk.Context) sdk.Iterator {
+func (k Keeper) GetWalletIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 	return sdk.KVStorePrefixIterator(store, nil)
 }
