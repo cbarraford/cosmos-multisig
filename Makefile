@@ -15,7 +15,7 @@ lint:
 	go mod verify
 
 test:
-	go test ./...
+	@go test ./...
 
 build:
-	go build
+	@go build
