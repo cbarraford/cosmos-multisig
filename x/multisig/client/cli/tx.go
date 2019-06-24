@@ -3,13 +3,13 @@ package cli
 import (
 	"github.com/spf13/cobra"
 
+	"github.com/cbarraford/cosmos-multisig/x/multisig/types"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/sdk-application-tutorial/x/nameservice/types"
-	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 )
 
 func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {

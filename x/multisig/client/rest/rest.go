@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/cbarraford/cosmos-multisig/x/multisig/types"
 	"github.com/cosmos/cosmos-sdk/client/context"
-	"github.com/cosmos/sdk-application-tutorial/x/nameservice/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"

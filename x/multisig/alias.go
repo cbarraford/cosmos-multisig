@@ -1,7 +1,7 @@
-package nameservice
+package multisig
 
 import (
-	"github.com/cosmos/sdk-application-tutorial/x/nameservice/types"
+	"github.com/cbarraford/cosmos-multisig/x/multisig/types"
 )
 
 const (

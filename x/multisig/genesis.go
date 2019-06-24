@@ -1,4 +1,4 @@
-package nameservice
+package multisig
 
 import (
 	"fmt"

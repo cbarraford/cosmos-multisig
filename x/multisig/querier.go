@@ -1,4 +1,4 @@
-package nameservice
+package multisig
 
 import (
 	"github.com/cosmos/cosmos-sdk/codec"
