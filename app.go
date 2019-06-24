@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/cbarraford/nameservice/x/nameservice"
+	"github.com/cbarraford/cosmos-multisig/x/multisig"
 	abci "github.com/tendermint/tendermint/abci/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
 	dbm "github.com/tendermint/tendermint/libs/db"
@@ -25,7 +25,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/staking"
 )
 
-const appName = "nameservice"
+const appName = "multisig"
 
 var (
 	// default home directories for the application CLI
@@ -41,7 +41,7 @@ var (
 		auth.AppModuleBasic{},
 		bank.AppModuleBasic{},
 		params.AppModuleBasic{},
-		nameservice.AppModule{},
+		multisig.AppModule{},
 		staking.AppModuleBasic{},
 		distr.AppModuleBasic{},
 		slashing.AppModuleBasic{},
@@ -82,7 +82,7 @@ type nameServiceApp struct {
 	distrKeeper         distr.Keeper
 	feeCollectionKeeper auth.FeeCollectionKeeper
 	paramsKeeper        params.Keeper
-	nsKeeper            nameservice.Keeper
+	nsKeeper            multisig.Keeper
 
 	// Module Manager
 	mm *module.Manager
@@ -109,7 +109,7 @@ func NewNameServiceApp(logger log.Logger, db dbm.DB) *nameServiceApp {
 		tkeyStaking:      sdk.NewTransientStoreKey(staking.TStoreKey),
 		keyDistr:         sdk.NewKVStoreKey(distr.StoreKey),
 		tkeyDistr:        sdk.NewTransientStoreKey(distr.TStoreKey),
-		keyNS:            sdk.NewKVStoreKey(nameservice.StoreKey),
+		keyNS:            sdk.NewKVStoreKey(multisig.StoreKey),
 		keyParams:        sdk.NewKVStoreKey(params.StoreKey),
 		tkeyParams:       sdk.NewTransientStoreKey(params.TStoreKey),
 		keySlashing:      sdk.NewKVStoreKey(slashing.StoreKey),
@@ -180,7 +180,7 @@ func NewNameServiceApp(logger log.Logger, db dbm.DB) *nameServiceApp {
 
 	// The NameserviceKeeper is the Keeper from the module for this tutorial
 	// It handles interactions with the namestore
-	app.nsKeeper = nameservice.NewKeeper(
+	app.nsKeeper = multisig.NewKeeper(
 		app.bankKeeper,
 		app.keyNS,
 		app.cdc,
@@ -191,7 +191,7 @@ func NewNameServiceApp(logger log.Logger, db dbm.DB) *nameServiceApp {
 		genutil.NewAppModule(app.accountKeeper, app.stakingKeeper, app.BaseApp.DeliverTx),
 		auth.NewAppModule(app.accountKeeper, app.feeCollectionKeeper),
 		bank.NewAppModule(app.bankKeeper, app.accountKeeper),
-		nameservice.NewAppModule(app.nsKeeper, app.bankKeeper),
+		multisig.NewAppModule(app.nsKeeper, app.bankKeeper),
 		distr.NewAppModule(app.distrKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.stakingKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.feeCollectionKeeper, app.distrKeeper, app.accountKeeper),
@@ -208,7 +208,7 @@ func NewNameServiceApp(logger log.Logger, db dbm.DB) *nameServiceApp {
 		auth.ModuleName,
 		bank.ModuleName,
 		slashing.ModuleName,
-		nameservice.ModuleName,
+		multisig.ModuleName,
 		genutil.ModuleName,
 	)
 
