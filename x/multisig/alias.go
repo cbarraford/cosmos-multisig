@@ -11,11 +11,12 @@ const (
 )
 
 var (
-	NewMsgBuyName = types.NewMsgBuyName
-	NewMsgSetName = types.NewMsgSetName
-	NewWhois      = types.NewWhois
-	ModuleCdc     = types.ModuleCdc
-	RegisterCodec = types.RegisterCodec
+	NewMsgBuyName     = types.NewMsgBuyName
+	NewMsgSetName     = types.NewMsgSetName
+	NewWhois          = types.NewWhois
+	NewMultiSigWallet = types.NewMultiSigWallet
+	ModuleCdc         = types.ModuleCdc
+	RegisterCodec     = types.RegisterCodec
 )
 
 type (
@@ -24,4 +25,5 @@ type (
 	QueryResResolve = types.QueryResResolve
 	QueryResNames   = types.QueryResNames
 	Whois           = types.Whois
+	MultiSigWallet  = types.MultiSigWallet
 )
