@@ -3,13 +3,12 @@ package multisig
 import (
 	"fmt"
 
-	"github.com/cbarraford/parsec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // NewHandler returns a handler for "nameservice" type messages.
 func NewHandler(keeper Keeper) sdk.Handler {
-	return func(ctx parsec.Context, msg sdk.Msg) sdk.Result {
+	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		switch msg := msg.(type) {
 		case MsgSetWallet:
 			return handleMsgSetWallet(ctx, keeper, msg)
@@ -21,7 +20,7 @@ func NewHandler(keeper Keeper) sdk.Handler {
 }
 
 // Handle a message to set name
-func handleMsgSetWallet(ctx parsec.Context, keeper Keeper, msg MsgSetWallet) sdk.Result {
+func handleMsgSetWallet(ctx sdk.Context, keeper Keeper, msg MsgSetWallet) sdk.Result {
 	var err error
 	// check the wallet does not already exist
 	wallet := keeper.GetWallet(ctx, msg.Name)

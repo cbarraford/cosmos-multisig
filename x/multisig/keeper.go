@@ -3,15 +3,15 @@ package multisig
 import (
 	"fmt"
 
-	"github.com/cbarraford/parsec"
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/x/bank"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // Keeper maintains the link to data storage and exposes getter/setter methods for the various parts of the state machine
 type Keeper struct {
-	coinKeeper parsec.Bank
+	coinKeeper bank.Keeper
 
 	storeKey sdk.StoreKey // Unexposed key to access store from sdk.Context
 
@@ -19,7 +19,7 @@ type Keeper struct {
 }
 
 // NewKeeper creates new instances of the nameservice Keeper
-func NewKeeper(coinKeeper parsec.Bank, storeKey sdk.StoreKey, cdc *codec.Codec) Keeper {
+func NewKeeper(coinKeeper bank.Keeper, storeKey sdk.StoreKey, cdc *codec.Codec) Keeper {
 	return Keeper{
 		coinKeeper: coinKeeper,
 		storeKey:   storeKey,
@@ -27,7 +27,7 @@ func NewKeeper(coinKeeper parsec.Bank, storeKey sdk.StoreKey, cdc *codec.Codec) 
 	}
 }
 
-func (k Keeper) GetWallet(ctx parsec.Context, name string) MultiSigWallet {
+func (k Keeper) GetWallet(ctx sdk.Context, name string) MultiSigWallet {
 	name = fmt.Sprintf("wallet-%s", name)
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(name)) {
@@ -40,7 +40,7 @@ func (k Keeper) GetWallet(ctx parsec.Context, name string) MultiSigWallet {
 }
 
 // Sets the entire wallet metadata struct for a multisig wallet
-func (k Keeper) SetWallet(ctx parsec.Context, name string, wallet MultiSigWallet) {
+func (k Keeper) SetWallet(ctx sdk.Context, name string, wallet MultiSigWallet) {
 	name = fmt.Sprintf("wallet-%s", name)
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(name), k.cdc.MustMarshalBinaryBare(wallet))

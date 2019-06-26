@@ -8,7 +8,6 @@ import (
 
 	"github.com/cbarraford/cosmos-multisig/x/multisig/client/cli"
 	"github.com/cbarraford/cosmos-multisig/x/multisig/client/rest"
-	"github.com/cbarraford/parsec"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/bank"
@@ -90,7 +89,7 @@ func (am AppModule) Route() string {
 	return RouterKey
 }
 
-func (am AppModule) NewHandler() parsec.Handler {
+func (am AppModule) NewHandler() sdk.Handler {
 	return NewHandler(am.keeper)
 }
 func (am AppModule) QuerierRoute() string {
