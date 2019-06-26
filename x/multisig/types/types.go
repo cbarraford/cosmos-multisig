@@ -17,14 +17,18 @@ type MultiSigWallet struct {
 	PubKeys  []string       `json:"pub_keys"`
 }
 
-// Returns a new MultiSigWallet with the minprice as the price
-func NewMultiSigWallet(name string, pubKeys []string, min int) (MultiSigWallet, error) {
+func createAddress(name string) (sdk.AccAddress, error) {
 	// encode name into a hex []byte
 	src := []byte(name)
 	dst := make([]byte, hex.EncodedLen(len(src)))
 	hex.Encode(dst, src)
 
-	addr, err := sdk.AccAddressFromHex(string(dst))
+	return sdk.AccAddressFromHex(string(dst))
+}
+
+// Returns a new MultiSigWallet with the minprice as the price
+func NewMultiSigWallet(name string, pubKeys []string, min int) (MultiSigWallet, error) {
+	addr, err := createAddress(name)
 	if err != nil {
 		return MultiSigWallet{}, err
 	}

@@ -15,13 +15,14 @@ type MsgSetWallet struct {
 }
 
 // NewMsgSetName is a constructor function for MsgSetName
-func NewMsgSetWallet(name string, pubKeys []string, min int, address sdk.AccAddress) MsgSetWallet {
+func NewMsgSetWallet(name string, pubKeys []string, min int) (MsgSetWallet, error) {
+	addr, err := createAddress(name)
 	return MsgSetWallet{
 		Name:     name,
 		PubKeys:  pubKeys,
 		MinSigTx: min,
-		Address:  address,
-	}
+		Address:  addr,
+	}, err
 }
 
 // Route should return the name of the module
@@ -37,6 +38,9 @@ func (msg MsgSetWallet) ValidateBasic() sdk.Error {
 	}
 	if len(msg.PubKeys) < 2 {
 		return sdk.ErrUnknownRequest("Must have at least 2 public keys")
+	}
+	if len(msg.PubKeys) < msg.MinSigTx {
+		return sdk.ErrUnknownRequest("Minimum signature transaction number cannot be larger than the number of public keys")
 	}
 	if msg.MinSigTx < 2 {
 		return sdk.ErrUnknownRequest("Must require at least 2 signatures")

@@ -15,7 +15,7 @@ lint:
 	go mod verify
 
 test:
-	@go test ./...
+	@go test -mod=readonly ./...
 
 build:
-	@go build
+	@go build -mod=readonly
