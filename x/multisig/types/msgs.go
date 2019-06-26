@@ -9,16 +9,16 @@ const RouterKey = ModuleName // this was defined in your key.go file
 // MsgSetName defines a SetName message
 type MsgSetWallet struct {
 	Name     string         `json:"name"`
-	Keys     []string       `json:"keys"`
+	PubKeys  []string       `json:"pub_keys"`
 	MinSigTx int            `json:"min_sig_tx"`
 	Address  sdk.AccAddress `json:"address"`
 }
 
 // NewMsgSetName is a constructor function for MsgSetName
-func NewMsgSetWallet(name string, keys []string, min int, address sdk.AccAddress) MsgSetWallet {
+func NewMsgSetWallet(name string, pubKeys []string, min int, address sdk.AccAddress) MsgSetWallet {
 	return MsgSetWallet{
 		Name:     name,
-		Keys:     keys,
+		PubKeys:  pubKeys,
 		MinSigTx: min,
 		Address:  address,
 	}
@@ -35,8 +35,8 @@ func (msg MsgSetWallet) ValidateBasic() sdk.Error {
 	if msg.Address.Empty() {
 		return sdk.ErrInvalidAddress(msg.Address.String())
 	}
-	if len(msg.Keys) < 2 {
-		return sdk.ErrUnknownRequest("Must have at least 2 keys")
+	if len(msg.PubKeys) < 2 {
+		return sdk.ErrUnknownRequest("Must have at least 2 public keys")
 	}
 	if msg.MinSigTx < 2 {
 		return sdk.ErrUnknownRequest("Must require at least 2 signatures")
