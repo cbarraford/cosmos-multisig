@@ -11,19 +11,19 @@ import (
 )
 
 func GetQueryCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
-	nameserviceQueryCmd := &cobra.Command{
+	msigQueryCmd := &cobra.Command{
 		Use:                        types.ModuleName,
-		Short:                      "Querying commands for the nameservice module",
+		Short:                      "Querying commands for the multisig module",
 		DisableFlagParsing:         true,
 		SuggestionsMinimumDistance: 2,
 		RunE:                       client.ValidateCmd,
 	}
-	nameserviceQueryCmd.AddCommand(client.GetCommands(
+	msigQueryCmd.AddCommand(client.GetCommands(
 		GetCmdResolveName(storeKey, cdc),
 		GetCmdWhois(storeKey, cdc),
 		GetCmdNames(storeKey, cdc),
 	)...)
-	return nameserviceQueryCmd
+	return msigQueryCmd
 }
 
 // GetCmdResolveName queries information about a name

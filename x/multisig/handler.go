@@ -6,20 +6,20 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// NewHandler returns a handler for "nameservice" type messages.
+// NewHandler returns a handler for "multisig" type messages.
 func NewHandler(keeper Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		switch msg := msg.(type) {
 		case MsgSetWallet:
 			return handleMsgSetWallet(ctx, keeper, msg)
 		default:
-			errMsg := fmt.Sprintf("Unrecognized nameservice Msg type: %v", msg.Type())
+			errMsg := fmt.Sprintf("Unrecognized multisig Msg type: %v", msg.Type())
 			return sdk.ErrUnknownRequest(errMsg).Result()
 		}
 	}
 }
 
-// Handle a message to set name
+// Handle a message to set wallet
 func handleMsgSetWallet(ctx sdk.Context, keeper Keeper, msg MsgSetWallet) sdk.Result {
 	var err error
 	// check the wallet does not already exist

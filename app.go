@@ -29,10 +29,10 @@ const appName = "multisig"
 
 var (
 	// default home directories for the application CLI
-	DefaultCLIHome = os.ExpandEnv("$HOME/.nscli")
+	DefaultCLIHome = os.ExpandEnv("$HOME/.msigcli")
 
 	// DefaultNodeHome sets the folder where the applcation data and configuration will be stored
-	DefaultNodeHome = os.ExpandEnv("$HOME/.nsd")
+	DefaultNodeHome = os.ExpandEnv("$HOME/.msigd")
 
 	// ModuleBasicManager is in charge of setting up basic module elemnets
 	ModuleBasics = module.NewBasicManager(
@@ -57,7 +57,7 @@ func MakeCodec() *codec.Codec {
 	return cdc
 }
 
-type nameServiceApp struct {
+type multisigApp struct {
 	*bam.BaseApp
 	cdc *codec.Codec
 
@@ -88,8 +88,8 @@ type nameServiceApp struct {
 	mm *module.Manager
 }
 
-// NewNameServiceApp is a constructor function for nameServiceApp
-func NewNameServiceApp(logger log.Logger, db dbm.DB) *nameServiceApp {
+// NewMultiSigApp is a constructor function for multisigApp
+func NewMultiSigApp(logger log.Logger, db dbm.DB) *multisigApp {
 
 	// First define the top level codec that will be shared by the different modules
 	cdc := MakeCodec()
@@ -98,7 +98,7 @@ func NewNameServiceApp(logger log.Logger, db dbm.DB) *nameServiceApp {
 	bApp := bam.NewBaseApp(appName, logger, db, auth.DefaultTxDecoder(cdc))
 
 	// Here you initialize your application with the store keys it requires
-	var app = &nameServiceApp{
+	var app = &multisigApp{
 		BaseApp: bApp,
 		cdc:     cdc,
 
@@ -178,8 +178,8 @@ func NewNameServiceApp(logger log.Logger, db dbm.DB) *nameServiceApp {
 			app.slashingKeeper.Hooks()),
 	)
 
-	// The NameserviceKeeper is the Keeper from the module for this tutorial
-	// It handles interactions with the namestore
+	// The MultisigKeeper is the Keeper from the module for this tutorial
+	// It handles interactions with the msig store
 	app.nsKeeper = multisig.NewKeeper(
 		app.bankKeeper,
 		app.keyNS,
@@ -258,7 +258,7 @@ func NewDefaultGenesisState() GenesisState {
 	return ModuleBasics.DefaultGenesis()
 }
 
-func (app *nameServiceApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
+func (app *multisigApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
 	var genesisState GenesisState
 
 	err := app.cdc.UnmarshalJSON(req.AppStateBytes, &genesisState)
@@ -269,19 +269,19 @@ func (app *nameServiceApp) InitChainer(ctx sdk.Context, req abci.RequestInitChai
 	return app.mm.InitGenesis(ctx, genesisState)
 }
 
-func (app *nameServiceApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
+func (app *multisigApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
 	return app.mm.BeginBlock(ctx, req)
 }
-func (app *nameServiceApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
+func (app *multisigApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
 	return app.mm.EndBlock(ctx, req)
 }
-func (app *nameServiceApp) LoadHeight(height int64) error {
+func (app *multisigApp) LoadHeight(height int64) error {
 	return app.LoadVersion(height, app.keyMain)
 }
 
 //_________________________________________________________
 
-func (app *nameServiceApp) ExportAppStateAndValidators(forZeroHeight bool, jailWhiteList []string,
+func (app *multisigApp) ExportAppStateAndValidators(forZeroHeight bool, jailWhiteList []string,
 ) (appState json.RawMessage, validators []tmtypes.GenesisValidator, err error) {
 
 	// as if they could withdraw from the start of the next block

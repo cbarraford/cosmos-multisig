@@ -2,8 +2,8 @@ include Makefile.ledger
 all: lint install
 
 install: go.sum
-		go install -mod=readonly $(BUILD_FLAGS) ./cmd/nsd
-		go install -mod=readonly $(BUILD_FLAGS) ./cmd/nscli
+		go install -mod=readonly $(BUILD_FLAGS) ./cmd/msigd
+		go install -mod=readonly $(BUILD_FLAGS) ./cmd/msigcli
 
 go.sum: go.mod
 		@echo "--> Ensure dependencies have not been modified"
