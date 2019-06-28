@@ -30,6 +30,7 @@ type createUnsignedTransaction struct {
 	From   string `json:"from"`
 	To     string `json:"to"`
 	Amount string `json:"amount"`
+	Memo   string `json:"memo"`
 }
 
 type fee struct {
@@ -113,7 +114,7 @@ func createUnsignedTransactionHandler(cliCtx context.CLIContext) http.HandlerFun
 					Gas:    fmt.Sprintf("%d", flags.DefaultGasLimit), // hard coded to default gas amount
 				},
 				Signatures: nil,
-				Memo:       "", // TODO: add memo support
+				Memo:       req.Memo,
 			},
 		}
 
