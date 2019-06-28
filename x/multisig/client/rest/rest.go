@@ -10,6 +10,7 @@ import (
 	"sort"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
@@ -109,7 +110,7 @@ func createUnsignedTransactionHandler(cliCtx context.CLIContext) http.HandlerFun
 				},
 				Fee: fee{
 					Amount: make([]int, 0),
-					Gas:    "200000", // hard coded to default gas amount
+					Gas:    fmt.Sprintf("%d", flags.DefaultGasLimit), // hard coded to default gas amount
 				},
 				Signatures: nil,
 				Memo:       "", // TODO: add memo support
