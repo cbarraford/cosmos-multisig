@@ -34,8 +34,8 @@ type createUnsignedTransaction struct {
 }
 
 type fee struct {
-	Amount []int  `json:"amount"`
-	Gas    string `json:"gas"`
+	Amount sdk.Coins `json:"amount"`
+	Gas    string    `json:"gas"`
 }
 
 type msg struct {
@@ -110,7 +110,7 @@ func createUnsignedTransactionHandler(cliCtx context.CLIContext) http.HandlerFun
 					},
 				},
 				Fee: fee{
-					Amount: make([]int, 0),
+					Amount: sdk.Coins{},
 					Gas:    fmt.Sprintf("%d", flags.DefaultGasLimit), // hard coded to default gas amount
 				},
 				Signatures: nil,
