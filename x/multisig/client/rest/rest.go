@@ -14,6 +14,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
+	"github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/multisig"
 
@@ -24,6 +25,76 @@ import (
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) {
 	r.HandleFunc(fmt.Sprintf("/%s/wallet", storeName), createWalletHandler(cliCtx)).Methods("POST")
 	r.HandleFunc(fmt.Sprintf("/%s/tx", storeName), createUnsignedTransactionHandler(cliCtx)).Methods("PUT")
+	r.HandleFunc(fmt.Sprintf("/%s/sign/multi", storeName), multiSignHandler(cliCtx)).Methods("POST")
+}
+
+type pubkey struct {
+	Type  string `json:"type"`
+	Value string `json:"value"`
+}
+
+type signature struct {
+	PubKey    pubkey `json:"pub_key"`
+	Signature string `json:"signature"`
+}
+
+type multiSign struct {
+	PubKeys    []string            `json:"pub_keys"`
+	MinSigTx   int                 `json:"min_sig_tx"`
+	Signatures []signature         `json:"signatures"`
+	Tx         unsignedTransaction `json:"unsigned_tx"`
+}
+
+func multiSignHandler(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req multiSign
+		var multiInfo keys.Info
+		var err error
+
+		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
+			return
+		}
+
+		sort.Slice(req.PubKeys, func(i, j int) bool {
+			return bytes.Compare([]byte(req.PubKeys[i]), []byte(req.PubKeys[j])) < 0
+		})
+
+		pubKeys := make([]crypto.PubKey, len(req.PubKeys))
+		for i, _ := range req.PubKeys {
+			var err error
+			pubKeys[i], err = sdk.GetAccPubKeyBech32(req.PubKeys[i])
+			if err != nil {
+				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+				return
+			}
+		}
+
+		multikey := multisig.NewPubKeyMultisigThreshold(req.MinSigTx, pubKeys)
+		multiInfo = keys.NewMultiInfo("multi", multikey)
+
+		multisigPub := multiInfo.GetPubKey().(multisig.PubKeyMultisigThreshold)
+		multisigSig := multisig.NewMultisig(len(multisigPub.PubKeys))
+
+		// read each signature and add it to the multisig if valid
+		for _, stdSig := range req.Signatures {
+			// Validate each signature
+			sigBytes := types.StdSignBytes(
+				txBldr.ChainID(), txBldr.AccountNumber(), txBldr.Sequence(),
+				stdTx.Fee, stdTx.GetMsgs(), stdTx.GetMemo(),
+			)
+			if ok := stdSig.PubKey.VerifyBytes(sigBytes, stdSig.Signature); !ok {
+				return fmt.Errorf("couldn't verify signature")
+			}
+			if err := multisigSig.AddSignatureFromPubKey(stdSig.Signature, stdSig.PubKey, multisigPub.PubKeys); err != nil {
+				return err
+			}
+		}
+
+		newStdSig := types.StdSignature{Signature: cdc.MustMarshalBinaryBare(multisigSig), PubKey: multisigPub}
+		newTx := types.NewStdTx(stdTx.GetMsgs(), stdTx.Fee, []types.StdSignature{newStdSig}, stdTx.GetMemo())
+
+	}
 }
 
 type createUnsignedTransaction struct {
@@ -31,11 +102,6 @@ type createUnsignedTransaction struct {
 	To     string `json:"to"`
 	Amount string `json:"amount"`
 	Memo   string `json:"memo"`
-}
-
-type fee struct {
-	Amount sdk.Coins `json:"amount"`
-	Gas    string    `json:"gas"`
 }
 
 type msg struct {
@@ -50,10 +116,10 @@ type value2 struct {
 }
 
 type value1 struct {
-	Msgs       []msg    `json:"msg"`
-	Fee        fee      `json:"fee"`
-	Signatures []string `json:"signatures"`
-	Memo       string   `json:"memo"`
+	Msgs       []msg        `json:"msg"`
+	Fee        types.StdFee `json:"fee"`
+	Signatures []string     `json:"signatures"`
+	Memo       string       `json:"memo"`
 }
 
 type unsignedTransaction struct {
@@ -70,13 +136,6 @@ func createUnsignedTransactionHandler(cliCtx context.CLIContext) http.HandlerFun
 			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
 			return
 		}
-
-		/*
-			baseReq := req.BaseReq.Sanitize()
-			if !baseReq.ValidateBasic(w) {
-				return
-			}
-		*/
 
 		_, err = sdk.AccAddressFromBech32(req.From)
 		if err != nil {
@@ -109,29 +168,11 @@ func createUnsignedTransactionHandler(cliCtx context.CLIContext) http.HandlerFun
 						},
 					},
 				},
-				Fee: fee{
-					Amount: sdk.Coins{},
-					Gas:    fmt.Sprintf("%d", flags.DefaultGasLimit), // hard coded to default gas amount
-				},
+				Fee:        NewStdFee(flags.DefaultGasLimit, sdk.Coins{}),
 				Signatures: nil,
 				Memo:       req.Memo,
 			},
 		}
-
-		/*
-			msg := types.NewMsgSend(from, to, coins)
-
-			stdSignMsg, err := txBldr.BuildSignMsg([]sdk.Msg{msg})
-			if err != nil {
-				return stdTx, nil
-			}
-			stdTx := authtypes.NewStdTx(stdSignMsg.Msgs, stdSignMsg.Fee, nil, stdSignMsg.Memo)
-
-			j, err := cliCtx.Codec.MarshalJSON(stdTx)
-			if err != nil {
-				return err
-			}
-		*/
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
