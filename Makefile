@@ -19,3 +19,10 @@ test:
 
 build:
 	@go build -mod=readonly
+
+start:
+	./scripts/start.bash
+
+clean:
+	rm -rf ~/.msigd
+	msigd unsafe-reset-all
