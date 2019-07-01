@@ -2,6 +2,7 @@ package multisig
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/x/bank"
@@ -70,7 +71,31 @@ func (k Keeper) CreateTransaction(ctx sdk.Context, transaction Transaction) {
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(transaction))
 }
 
-func (k Keeper) GetTransactionsIterator(ctx sdk.Context) sdk.Iterator {
+func (k Keeper) GetIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 	return sdk.KVStorePrefixIterator(store, nil)
+}
+
+func (k Keeper) DeleteTransaction(ctx sdk.Context, uid uuid.UUID) {
+	key := fmt.Sprintf("transaction-%s", uid)
+	store := ctx.KVStore(k.storeKey)
+	store.Delete([]byte(key))
+}
+
+func (k Keeper) CleanupTransactions(ctx sdk.Context, maxAge int64) {
+
+	currentHeight := ctx.BlockHeight()
+	iterator := k.GetIterator(ctx)
+	store := ctx.KVStore(k.storeKey)
+
+	for ; iterator.Valid(); iterator.Next() {
+		if strings.HasPrefix(string(iterator.Key()), "transaction-") {
+			bz := store.Get(iterator.Key())
+			var transaction Transaction
+			k.cdc.MustUnmarshalBinaryBare(bz, &transaction)
+			if currentHeight > (transaction.CreatedAt + maxAge) {
+				store.Delete(iterator.Key())
+			}
+		}
+	}
 }
