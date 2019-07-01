@@ -44,7 +44,7 @@ func handleMsgCreateTransaction(ctx sdk.Context, keeper Keeper, msg MsgCreateTra
 	if !transaction.From.Empty() {
 		return sdk.ErrUnauthorized("Transaction already exists").Result()
 	}
-	transaction = NewTransaction(msg.From, msg.To, msg.Coins)
+	transaction = NewTransaction(msg.From, msg.To, msg.Coins, ctx.BlockHeight())
 	keeper.CreateTransaction(ctx, transaction)
 	return sdk.Result{}
 }

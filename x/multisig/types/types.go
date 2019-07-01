@@ -89,15 +89,16 @@ type Transaction struct {
 	To         sdk.AccAddress `json:"to_address"`
 	Coins      sdk.Coins      `json:"coins"`
 	Signatures []Signature    `json:"signatures"`
-	CreatedAt  int            `json:"created_at"` // block height
+	CreatedAt  int64          `json:"created_at"` // block height
 }
 
-func NewTransaction(from, to sdk.AccAddress, coins sdk.Coins) Transaction {
+func NewTransaction(from, to sdk.AccAddress, coins sdk.Coins, height int64) Transaction {
 	return Transaction{
-		UUID:  uuid.New(),
-		From:  from,
-		To:    to,
-		Coins: coins,
+		UUID:      uuid.New(),
+		From:      from,
+		To:        to,
+		Coins:     coins,
+		CreatedAt: height,
 	}
 }
 

@@ -69,3 +69,8 @@ func (k Keeper) CreateTransaction(ctx sdk.Context, transaction Transaction) {
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(transaction))
 }
+
+func (k Keeper) GetTransactionsIterator(ctx sdk.Context) sdk.Iterator {
+	store := ctx.KVStore(k.storeKey)
+	return sdk.KVStorePrefixIterator(store, nil)
+}
