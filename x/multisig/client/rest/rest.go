@@ -8,8 +8,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"sort"
+	"strings"
 
-	codec "github.com/cbarraford/cosmos-multisig/codec"
 	mtypes "github.com/cbarraford/cosmos-multisig/x/multisig/types"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
@@ -57,70 +57,37 @@ type multiSign struct {
 
 func multiSignHandler(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		cdc := codec.MakeCodec()
 		var req multiSign
-		var multiInfo keys.Info
 		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
 			return
 		}
 
-		sort.Slice(req.PubKeys, func(i, j int) bool {
-			return bytes.Compare([]byte(req.PubKeys[i]), []byte(req.PubKeys[j])) < 0
-		})
-
-		pubKeys := make([]crypto.PubKey, len(req.PubKeys))
-		for i, _ := range req.PubKeys {
-			var err error
-			pubKeys[i], err = sdk.GetAccPubKeyBech32(req.PubKeys[i])
-			if err != nil {
-				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-				return
+		// Important: The input signature must be in order relative to their
+		// public key was in the list of public keys were used to create the
+		// multisig wallet.
+		signatures := make([]string, len(req.Signatures))
+		for i, stdSig := range req.Signatures {
+			if i < (len(req.Signatures) - 1) {
+				sig := []byte(stdSig.Signature)
+				// since we are not the last signature, make edits...
+				// remove the '==' at the end of the string
+				sig = sig[:len(sig)-2]
+				// increment the last character by 1
+				sig[len(sig)-1] += 1
+				signatures[i] = string(sig)
+			} else {
+				signatures[i] = stdSig.Signature
 			}
 		}
 
-		multikey := multisig.NewPubKeyMultisigThreshold(req.MinSigTx, pubKeys)
-		multiInfo = keys.NewMultiInfo("multi", multikey)
-
-		multisigPub := multiInfo.GetPubKey().(multisig.PubKeyMultisigThreshold)
-		multisigSig := multisig.NewMultisig(len(multisigPub.PubKeys))
-
-		// read each signature and add it to the multisig if valid
-		for _, stdSig := range req.Signatures {
-			// TODO: Validate each signature
-			/*
-				sigBytes := types.StdSignBytes(
-					req.ChainID, req.AccountNumber, req.Sequence,
-					req.Tx.Value.Fee, stdTx.GetMsgs(), req.Tx.Value.Memo,
-				)
-				if ok := stdSig.PubKey.VerifyBytes(sigBytes, stdSig.Signature); !ok {
-					return fmt.Errorf("couldn't verify signature")
-				}
-			*/
-
-			var pubKey crypto.PubKey
-			j, _ := json.Marshal(stdSig.PubKey)
-			err := cdc.UnmarshalJSON(j, &pubKey)
-			if err != nil {
-				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-				return
-			}
-			if err := multisigSig.AddSignatureFromPubKey(
-				[]byte(stdSig.Signature),
-				pubKey,
-				multisigPub.PubKeys,
-			); err != nil {
-				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-				return
-			}
-		}
-
-		newStdSig := types.StdSignature{Signature: cdc.MustMarshalBinaryBare(multisigSig), PubKey: multisigPub}
+		// prepend base string "CgUIAxIB4B"
+		signatures = append([]string{"CgUIAxIB4B"}, signatures...)
+		multisignature := strings.Join(signatures[:], "JA")
 
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
-		j, _ = json.Marshal(newStdSig)
-		io.WriteString(w, string(j))
+		io.WriteString(w, fmt.Sprintf(`{"signature":"%s"}`, multisignature))
 	}
 }
 
