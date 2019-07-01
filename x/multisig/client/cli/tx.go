@@ -36,7 +36,7 @@ func GetCmdSetWallet(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "create-wallet [name] [min-signatures-required] [pub-keys]",
 		Short: "create a new multi-signature wallet",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var err error
 			cliCtx := context.NewCLIContext().WithCodec(cdc).WithAccountDecoder(cdc)
