@@ -7,6 +7,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/google/uuid"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/multisig"
 )
@@ -73,6 +74,37 @@ func (w MultiSigWallet) String() string {
 	return strings.TrimSpace(
 		fmt.Sprintf(
 			`Wallet: %s (%d of %d): %s`, w.Name, w.MinSigTx, len(w.PubKeys), w.Address,
+		),
+	)
+}
+
+type Signature struct {
+	PubKey    crypto.PubKey `json:"pub_key"`
+	Signature string        `json:"signature"`
+}
+
+type Transaction struct {
+	UUID       uuid.UUID      `json:"uuid"`
+	From       sdk.AccAddress `json:"from_address"`
+	To         sdk.AccAddress `json:"to_address"`
+	Coins      sdk.Coins      `json:"coins"`
+	Signatures []Signature    `json:"signatures"`
+	CreatedAt  int            `json:"created_at"` // block height
+}
+
+func NewTransaction(from, to sdk.AccAddress, coins sdk.Coins) Transaction {
+	return Transaction{
+		UUID:  uuid.New(),
+		From:  from,
+		To:    to,
+		Coins: coins,
+	}
+}
+
+func (t Transaction) String() string {
+	return strings.TrimSpace(
+		fmt.Sprintf(
+			`Transaction (%s): %s --> %s %+v`, t.UUID, t.From, t.To, t.Coins,
 		),
 	)
 }

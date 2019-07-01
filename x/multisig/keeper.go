@@ -5,6 +5,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/x/bank"
+	"github.com/google/uuid"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -49,4 +50,22 @@ func (k Keeper) CreateWallet(ctx sdk.Context, wallet MultiSigWallet) {
 func (k Keeper) GetWalletIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 	return sdk.KVStorePrefixIterator(store, nil)
+}
+
+func (k Keeper) GetTransaction(ctx sdk.Context, uid uuid.UUID) Transaction {
+	key := fmt.Sprintf("transaction-%s", uid)
+	store := ctx.KVStore(k.storeKey)
+	if !store.Has([]byte(key)) {
+		return Transaction{}
+	}
+	bz := store.Get([]byte(key))
+	var transaction Transaction
+	k.cdc.MustUnmarshalBinaryBare(bz, &transaction)
+	return transaction
+}
+
+func (k Keeper) CreateTransaction(ctx sdk.Context, transaction Transaction) {
+	key := fmt.Sprintf("transaction-%s", transaction.UUID)
+	store := ctx.KVStore(k.storeKey)
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(transaction))
 }

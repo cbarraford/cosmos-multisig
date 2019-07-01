@@ -19,7 +19,7 @@ func NewHandler(keeper Keeper) sdk.Handler {
 	}
 }
 
-// Handle a message to set wallet
+// Handle a message to create wallet
 func handleMsgCreateWallet(ctx sdk.Context, keeper Keeper, msg MsgCreateWallet) sdk.Result {
 	var err error
 	// check the wallet does not already exist
@@ -34,5 +34,17 @@ func handleMsgCreateWallet(ctx sdk.Context, keeper Keeper, msg MsgCreateWallet) 
 		).Result()
 	}
 	keeper.CreateWallet(ctx, wallet)
+	return sdk.Result{}
+}
+
+// Handle a message to create transaction
+func handleMsgCreateTransaction(ctx sdk.Context, keeper Keeper, msg MsgCreateTransaction) sdk.Result {
+	// check the transaction does not already exist
+	transaction := keeper.GetTransaction(ctx, msg.UUID)
+	if !transaction.From.Empty() {
+		return sdk.ErrUnauthorized("Transaction already exists").Result()
+	}
+	transaction = NewTransaction(msg.From, msg.To, msg.Coins)
+	keeper.CreateTransaction(ctx, transaction)
 	return sdk.Result{}
 }

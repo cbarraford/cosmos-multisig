@@ -18,7 +18,7 @@ test:
 	@go test -mod=readonly ./...
 
 build:
-	@go build -mod=readonly
+	@go build
 
 start:
 	./scripts/start.bash

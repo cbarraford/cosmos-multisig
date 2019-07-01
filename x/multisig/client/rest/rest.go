@@ -26,6 +26,7 @@ var (
 // RegisterRoutes - Central function to define routes that get registered by the main application
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) {
 	r.HandleFunc(fmt.Sprintf("/%s/wallet", storeName), createWalletHandler(cliCtx)).Methods("POST")
+	r.HandleFunc(fmt.Sprintf("/%s/transaction", storeName), createTransactionHandler(cliCtx)).Methods("POST")
 	r.HandleFunc(fmt.Sprintf("/%s/tx", storeName), createUnsignedTransactionHandler(cliCtx)).Methods("PUT")
 	r.HandleFunc(fmt.Sprintf("/%s/sign/multi", storeName), multiSignHandler(cliCtx)).Methods("POST")
 }
@@ -167,6 +168,41 @@ func createUnsignedTransactionHandler(cliCtx context.CLIContext) http.HandlerFun
 		w.WriteHeader(http.StatusOK)
 		j, _ := json.Marshal(tx)
 		io.WriteString(w, string(j))
+	}
+}
+
+type createTransaction struct {
+	BaseReq rest.BaseReq   `json:"base_req"`
+	From    sdk.AccAddress `json:"from"`
+	To      sdk.AccAddress `json:"to"`
+	Coins   sdk.Coins      `json:"coins"`
+}
+
+func createTransactionHandler(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req createTransaction
+		var err error
+
+		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
+			return
+		}
+
+		baseReq := req.BaseReq.Sanitize()
+		if !baseReq.ValidateBasic(w) {
+			// TODO: is this needed?
+			// return
+		}
+
+		// create the message
+		msg := mtypes.NewMsgCreateTransaction(req.From, req.To, req.Coins)
+		err = msg.ValidateBasic()
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		utils.WriteGenerateStdTxResponse(w, cliCtx, baseReq, []sdk.Msg{msg})
 	}
 }
 
