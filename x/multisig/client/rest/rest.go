@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"sort"
 
@@ -42,7 +41,7 @@ type pubkey struct {
 }
 
 type signature struct {
-	PubKey    pubkey `json:"pub_key"`
+	PubKey    pubkey `json:"pub_key,omitempty"`
 	Signature string `json:"signature"`
 }
 
@@ -117,14 +116,11 @@ func multiSignHandler(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		newStdSig := types.StdSignature{Signature: cdc.MustMarshalBinaryBare(multisigSig), PubKey: multisigPub}
-		// newTx := types.NewStdTx(stdTx.GetMsgs(), stdTx.Fee, []types.StdSignature{newStdSig}, stdTx.GetMemo())
 
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
-		j, _ := json.Marshal(newStdSig.Signature)
-		log.Printf("Signature: %s", string(j))
+		j, _ = json.Marshal(newStdSig)
 		io.WriteString(w, string(j))
-
 	}
 }
 
