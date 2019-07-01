@@ -6,8 +6,12 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"sort"
+
+	codec "github.com/cbarraford/cosmos-multisig/codec"
+	mtypes "github.com/cbarraford/cosmos-multisig/x/multisig/types"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -19,6 +23,10 @@ import (
 	"github.com/tendermint/tendermint/crypto/multisig"
 
 	"github.com/gorilla/mux"
+)
+
+var (
+	ModuleCdc = mtypes.ModuleCdc
 )
 
 // RegisterRoutes - Central function to define routes that get registered by the main application
@@ -39,18 +47,20 @@ type signature struct {
 }
 
 type multiSign struct {
-	PubKeys    []string            `json:"pub_keys"`
-	MinSigTx   int                 `json:"min_sig_tx"`
-	Signatures []signature         `json:"signatures"`
-	Tx         unsignedTransaction `json:"unsigned_tx"`
+	PubKeys       []string            `json:"pub_keys"`
+	MinSigTx      int                 `json:"min_sig_tx"`
+	Signatures    []signature         `json:"signatures"`
+	Tx            unsignedTransaction `json:"unsigned_tx"`
+	ChainID       string              `json:"chain_id"`
+	AccountNumber uint64              `json:"account_number"`
+	Sequence      uint64              `json:"sequence"`
 }
 
 func multiSignHandler(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		cdc := codec.MakeCodec()
 		var req multiSign
 		var multiInfo keys.Info
-		var err error
-
 		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
 			return
@@ -78,21 +88,42 @@ func multiSignHandler(cliCtx context.CLIContext) http.HandlerFunc {
 
 		// read each signature and add it to the multisig if valid
 		for _, stdSig := range req.Signatures {
-			// Validate each signature
-			sigBytes := types.StdSignBytes(
-				txBldr.ChainID(), txBldr.AccountNumber(), txBldr.Sequence(),
-				stdTx.Fee, stdTx.GetMsgs(), stdTx.GetMemo(),
-			)
-			if ok := stdSig.PubKey.VerifyBytes(sigBytes, stdSig.Signature); !ok {
-				return fmt.Errorf("couldn't verify signature")
+			// TODO: Validate each signature
+			/*
+				sigBytes := types.StdSignBytes(
+					req.ChainID, req.AccountNumber, req.Sequence,
+					req.Tx.Value.Fee, stdTx.GetMsgs(), req.Tx.Value.Memo,
+				)
+				if ok := stdSig.PubKey.VerifyBytes(sigBytes, stdSig.Signature); !ok {
+					return fmt.Errorf("couldn't verify signature")
+				}
+			*/
+
+			var pubKey crypto.PubKey
+			j, _ := json.Marshal(stdSig.PubKey)
+			err := cdc.UnmarshalJSON(j, &pubKey)
+			if err != nil {
+				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+				return
 			}
-			if err := multisigSig.AddSignatureFromPubKey(stdSig.Signature, stdSig.PubKey, multisigPub.PubKeys); err != nil {
-				return err
+			if err := multisigSig.AddSignatureFromPubKey(
+				[]byte(stdSig.Signature),
+				pubKey,
+				multisigPub.PubKeys,
+			); err != nil {
+				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+				return
 			}
 		}
 
 		newStdSig := types.StdSignature{Signature: cdc.MustMarshalBinaryBare(multisigSig), PubKey: multisigPub}
-		newTx := types.NewStdTx(stdTx.GetMsgs(), stdTx.Fee, []types.StdSignature{newStdSig}, stdTx.GetMemo())
+		// newTx := types.NewStdTx(stdTx.GetMsgs(), stdTx.Fee, []types.StdSignature{newStdSig}, stdTx.GetMemo())
+
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		j, _ := json.Marshal(newStdSig.Signature)
+		log.Printf("Signature: %s", string(j))
+		io.WriteString(w, string(j))
 
 	}
 }
@@ -168,7 +199,7 @@ func createUnsignedTransactionHandler(cliCtx context.CLIContext) http.HandlerFun
 						},
 					},
 				},
-				Fee:        NewStdFee(flags.DefaultGasLimit, sdk.Coins{}),
+				Fee:        types.NewStdFee(flags.DefaultGasLimit, sdk.Coins{}),
 				Signatures: nil,
 				Memo:       req.Memo,
 			},
