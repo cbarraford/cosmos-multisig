@@ -10,8 +10,8 @@ import (
 func NewHandler(keeper Keeper) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		switch msg := msg.(type) {
-		case MsgSetWallet:
-			return handleMsgSetWallet(ctx, keeper, msg)
+		case MsgCreateWallet:
+			return handleMsgCreateWallet(ctx, keeper, msg)
 		default:
 			errMsg := fmt.Sprintf("Unrecognized multisig Msg type: %v", msg.Type())
 			return sdk.ErrUnknownRequest(errMsg).Result()
@@ -20,10 +20,10 @@ func NewHandler(keeper Keeper) sdk.Handler {
 }
 
 // Handle a message to set wallet
-func handleMsgSetWallet(ctx sdk.Context, keeper Keeper, msg MsgSetWallet) sdk.Result {
+func handleMsgCreateWallet(ctx sdk.Context, keeper Keeper, msg MsgCreateWallet) sdk.Result {
 	var err error
 	// check the wallet does not already exist
-	wallet := keeper.GetWallet(ctx, msg.Name)
+	wallet := keeper.GetWallet(ctx, msg.Address.String())
 	if !wallet.Address.Empty() {
 		return sdk.ErrUnauthorized("Wallet already exists").Result()
 	}
@@ -33,6 +33,6 @@ func handleMsgSetWallet(ctx sdk.Context, keeper Keeper, msg MsgSetWallet) sdk.Re
 			fmt.Sprintf("Error creating new wallet: %s", err.Error()),
 		).Result()
 	}
-	keeper.SetWallet(ctx, msg.Name, wallet)
+	keeper.CreateWallet(ctx, wallet)
 	return sdk.Result{}
 }

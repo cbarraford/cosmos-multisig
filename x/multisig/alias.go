@@ -11,14 +11,14 @@ const (
 )
 
 var (
-	NewMsgSetWallet   = types.NewMsgSetWallet
-	NewMultiSigWallet = types.NewMultiSigWallet
-	ModuleCdc         = types.ModuleCdc
-	RegisterCodec     = types.RegisterCodec
+	NewMsgCreateWallet = types.NewMsgCreateWallet
+	NewMultiSigWallet  = types.NewMultiSigWallet
+	ModuleCdc          = types.ModuleCdc
+	RegisterCodec      = types.RegisterCodec
 )
 
 type (
-	MsgSetWallet    = types.MsgSetWallet
+	MsgCreateWallet = types.MsgCreateWallet
 	QueryResResolve = types.QueryResResolve
 	QueryResNames   = types.QueryResNames
 	MultiSigWallet  = types.MultiSigWallet

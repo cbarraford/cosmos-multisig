@@ -1,25 +1,20 @@
 package rest
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
-	"sort"
 	"strings"
 
 	mtypes "github.com/cbarraford/cosmos-multisig/x/multisig/types"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
-	"github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
+	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/multisig"
 
 	"github.com/gorilla/mux"
 )
@@ -176,58 +171,38 @@ func createUnsignedTransactionHandler(cliCtx context.CLIContext) http.HandlerFun
 }
 
 type createWallet struct {
-	Address  string   `json:"address"`
-	MinSigTx int      `json:"min_sig_tx"`
-	PubKeys  []string `json:"pub_keys"`
+	Name     string       `json:"name"`
+	BaseReq  rest.BaseReq `json:"base_req"`
+	Address  string       `json:"address"`
+	MinSigTx int          `json:"min_sig_tx"`
+	PubKeys  []string     `json:"pub_keys"`
 }
 
 func createWalletHandler(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req createWallet
-		var info keys.Info
+		var err error
 
-		b, err := ioutil.ReadAll(r.Body)
-		defer r.Body.Close()
-		if err != nil {
-			http.Error(w, err.Error(), 500)
+		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
 			return
 		}
 
-		// Unmarshal
-		err = json.Unmarshal(b, &req)
-		if err != nil {
-			http.Error(w, err.Error(), 500)
-			return
+		baseReq := req.BaseReq.Sanitize()
+		if !baseReq.ValidateBasic(w) {
+			// TODO: is this needed?
+			// return
 		}
 
-		err = validateMultisigThreshold(req.MinSigTx, len(req.PubKeys))
+		// create the message
+		msg := mtypes.NewMsgCreateWallet(req.Name, req.PubKeys, req.MinSigTx)
+		err = msg.ValidateBasic()
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
-		sort.Slice(req.PubKeys, func(i, j int) bool {
-			return bytes.Compare([]byte(req.PubKeys[i]), []byte(req.PubKeys[j])) < 0
-		})
-
-		pubKeys := make([]crypto.PubKey, len(req.PubKeys))
-		for i, _ := range req.PubKeys {
-			var err error
-			pubKeys[i], err = sdk.GetAccPubKeyBech32(req.PubKeys[i])
-			if err != nil {
-				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-				return
-			}
-		}
-
-		multikey := multisig.NewPubKeyMultisigThreshold(req.MinSigTx, pubKeys)
-		info = keys.NewMultiInfo("multi", multikey)
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		req.Address = fmt.Sprintf("%s", info.GetAddress())
-		wallet, _ := json.Marshal(req)
-		io.WriteString(w, string(wallet))
+		utils.WriteGenerateStdTxResponse(w, cliCtx, baseReq, []sdk.Msg{msg})
 	}
 }
 

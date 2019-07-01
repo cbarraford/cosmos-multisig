@@ -54,7 +54,7 @@ func GetCmdSetWallet(cdc *codec.Codec) *cobra.Command {
 
 			pubKeys := strings.Split(args[2], ",")
 
-			msg, err := types.NewMsgSetWallet(args[0], pubKeys, int(minSigs))
+			msg := types.NewMsgCreateWallet(args[0], pubKeys, int(minSigs))
 			if err != nil {
 				return err
 			}

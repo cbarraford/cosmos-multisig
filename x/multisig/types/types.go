@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/multisig"
 )
 
 // MultiSigWallet is a struct that contains all the metadata of a multiple
@@ -26,23 +29,42 @@ func createAddress(name string) (sdk.AccAddress, error) {
 	return sdk.AccAddressFromHex(string(dst))
 }
 
+func validateMultisigThreshold(k, nKeys int) error {
+	if k <= 0 {
+		return fmt.Errorf("threshold must be a positive integer")
+	}
+	if nKeys < k {
+		return fmt.Errorf(
+			"threshold k of n multisignature: %d < %d", nKeys, k)
+	}
+	return nil
+}
+
 // Returns a new MultiSigWallet with the minprice as the price
 func NewMultiSigWallet(name string, pubKeys []string, min int) (MultiSigWallet, error) {
-	addr, err := createAddress(name)
+	var err error
+
+	err = validateMultisigThreshold(min, len(pubKeys))
 	if err != nil {
 		return MultiSigWallet{}, err
 	}
 
-	// check if we need to set a default min keys
-	if min < 2 {
-		min = len(pubKeys) - 1
+	cryptoPubKeys := make([]crypto.PubKey, len(pubKeys))
+	for i, _ := range cryptoPubKeys {
+		cryptoPubKeys[i], err = sdk.GetAccPubKeyBech32(pubKeys[i])
+		if err != nil {
+			return MultiSigWallet{}, err
+		}
 	}
+
+	multikey := multisig.NewPubKeyMultisigThreshold(min, cryptoPubKeys)
+	info := keys.NewMultiInfo("multisig", multikey)
 
 	return MultiSigWallet{
 		Name:     name,
 		MinSigTx: min,
 		PubKeys:  pubKeys,
-		Address:  addr,
+		Address:  info.GetAddress(),
 	}, nil
 }
 

@@ -27,23 +27,23 @@ func NewKeeper(coinKeeper bank.Keeper, storeKey sdk.StoreKey, cdc *codec.Codec) 
 	}
 }
 
-func (k Keeper) GetWallet(ctx sdk.Context, name string) MultiSigWallet {
-	name = fmt.Sprintf("wallet-%s", name)
+func (k Keeper) GetWallet(ctx sdk.Context, address string) MultiSigWallet {
+	address = fmt.Sprintf("wallet-%s", address)
 	store := ctx.KVStore(k.storeKey)
-	if !store.Has([]byte(name)) {
+	if !store.Has([]byte(address)) {
 		return MultiSigWallet{}
 	}
-	bz := store.Get([]byte(name))
+	bz := store.Get([]byte(address))
 	var wallet MultiSigWallet
 	k.cdc.MustUnmarshalBinaryBare(bz, &wallet)
 	return wallet
 }
 
 // Sets the entire wallet metadata struct for a multisig wallet
-func (k Keeper) SetWallet(ctx sdk.Context, name string, wallet MultiSigWallet) {
-	name = fmt.Sprintf("wallet-%s", name)
+func (k Keeper) CreateWallet(ctx sdk.Context, wallet MultiSigWallet) {
+	address := fmt.Sprintf("wallet-%s", wallet.Address.String())
 	store := ctx.KVStore(k.storeKey)
-	store.Set([]byte(name), k.cdc.MustMarshalBinaryBare(wallet))
+	store.Set([]byte(address), k.cdc.MustMarshalBinaryBare(wallet))
 }
 
 func (k Keeper) GetWalletIterator(ctx sdk.Context) sdk.Iterator {
