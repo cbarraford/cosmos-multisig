@@ -42,7 +42,7 @@ func (k Keeper) GetWallet(ctx sdk.Context, address string) MultiSigWallet {
 }
 
 // Sets the entire wallet metadata struct for a multisig wallet
-func (k Keeper) CreateWallet(ctx sdk.Context, wallet MultiSigWallet) {
+func (k Keeper) SetWallet(ctx sdk.Context, wallet MultiSigWallet) {
 	address := fmt.Sprintf("wallet-%s", wallet.Address.String())
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(address), k.cdc.MustMarshalBinaryBare(wallet))
@@ -65,7 +65,7 @@ func (k Keeper) GetTransaction(ctx sdk.Context, uid uuid.UUID) Transaction {
 	return transaction
 }
 
-func (k Keeper) CreateTransaction(ctx sdk.Context, transaction Transaction) {
+func (k Keeper) SetTransaction(ctx sdk.Context, transaction Transaction) {
 	key := fmt.Sprintf("transaction-%s", transaction.UUID)
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(transaction))

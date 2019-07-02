@@ -108,3 +108,88 @@ func (msg MsgCreateTransaction) GetSignBytes() []byte {
 func (msg MsgCreateTransaction) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.From}
 }
+
+// MsgSignTransaction defines a SignTransaction message
+type MsgSignTransaction struct {
+	UUID      uuid.UUID `json:"uuid"`
+	Signature Signature `json:"signature"`
+}
+
+// NewMsgSignTransaction is a constructor function for MsgCreateTransaction
+func NewMsgSignTransaction(uid uuid.UUID, sig Signature) MsgSignTransaction {
+	return MsgSignTransaction{
+		UUID:      uid,
+		Signature: sig,
+	}
+}
+
+// Route should return the name of the module
+func (msg MsgSignTransaction) Route() string { return RouterKey }
+
+// Type should return the action
+func (msg MsgSignTransaction) Type() string { return "sign_transaction" }
+
+// ValidateBasic runs stateless checks on the message
+func (msg MsgSignTransaction) ValidateBasic() sdk.Error {
+	if len(msg.UUID) == 0 {
+		return sdk.ErrUnknownRequest("UUID cannot be blank")
+	}
+	if len(msg.Signature.PubKey.Bytes()) == 0 {
+		return sdk.ErrUnknownRequest("Pubkey cannot be blank")
+	}
+	if msg.Signature.Signature == "" {
+		return sdk.ErrUnknownRequest("Signature cannot be blank")
+	}
+	return nil
+}
+
+// GetSignBytes encodes the message for signing
+func (msg MsgSignTransaction) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
+}
+
+// GetSigners defines whose signature is required
+func (msg MsgSignTransaction) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{}
+}
+
+// MsgCompleteTransaction defines complete a transaction
+type MsgCompleteTransaction struct {
+	UUID uuid.UUID `json:"uuid"`
+	TxID string    `json:"tx_id"`
+}
+
+// NewMsgCompleteTransaction is a constructor function for MsgCompleteTransaction
+func NewMsgCompleteTransaction(uid uuid.UUID, txID string) MsgCompleteTransaction {
+	return MsgCompleteTransaction{
+		UUID: uid,
+		TxID: txID,
+	}
+}
+
+// Route should return the name of the module
+func (msg MsgCompleteTransaction) Route() string { return RouterKey }
+
+// Type should return the action
+func (msg MsgCompleteTransaction) Type() string { return "sign_transaction" }
+
+// ValidateBasic runs stateless checks on the message
+func (msg MsgCompleteTransaction) ValidateBasic() sdk.Error {
+	if len(msg.UUID) == 0 {
+		return sdk.ErrUnknownRequest("UUID cannot be blank")
+	}
+	if msg.TxID == "" {
+		return sdk.ErrUnknownRequest("Transaction ID cannot be blank")
+	}
+	return nil
+}
+
+// GetSignBytes encodes the message for signing
+func (msg MsgCompleteTransaction) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
+}
+
+// GetSigners defines whose signature is required
+func (msg MsgCompleteTransaction) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{}
+}

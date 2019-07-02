@@ -89,17 +89,30 @@ type Transaction struct {
 	To         sdk.AccAddress `json:"to_address"`
 	Coins      sdk.Coins      `json:"coins"`
 	Signatures []Signature    `json:"signatures"`
+	TxID       string         `json:"tx_id"`
 	CreatedAt  int64          `json:"created_at"` // block height
 }
 
-func NewTransaction(from, to sdk.AccAddress, coins sdk.Coins, height int64) Transaction {
+func NewTransaction(from, to sdk.AccAddress, coins sdk.Coins, height int64, signatures []Signature) Transaction {
 	return Transaction{
-		UUID:      uuid.New(),
-		From:      from,
-		To:        to,
-		Coins:     coins,
-		CreatedAt: height,
+		UUID:       uuid.New(),
+		From:       from,
+		To:         to,
+		Coins:      coins,
+		CreatedAt:  height,
+		Signatures: signatures,
 	}
+}
+
+// adds a signature to Transaction. If signature already exists, overwrite
+func (t *Transaction) AddSignature(input Signature) error {
+	for i, sig := range t.Signatures {
+		if sig.PubKey == input.PubKey {
+			t.Signatures[i].Signature = input.Signature
+			return nil
+		}
+	}
+	return fmt.Errorf("Unable to add signature")
 }
 
 func (t Transaction) String() string {
