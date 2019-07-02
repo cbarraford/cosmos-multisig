@@ -20,18 +20,88 @@ import (
 	"github.com/gorilla/mux"
 )
 
+const (
+	walletAddress = "address"
+	transactionID = "transaction_id"
+)
+
 var (
 	ModuleCdc = mtypes.ModuleCdc
 )
 
 // RegisterRoutes - Central function to define routes that get registered by the main application
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) {
+	r.HandleFunc(fmt.Sprintf("/%s/wallet/{%s}", storeName, walletAddress), getWalletHandler(cliCtx, storeName)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/transaction/{%s}", storeName, transactionID), getTransactionHandler(cliCtx, storeName)).Methods("GET")
+
+	r.HandleFunc(fmt.Sprintf("/%s/wallets/{%s}", storeName), walletsHandler(cliCtx, storeName)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/transactions/{%s}", storeName), transactionsHandler(cliCtx, storeName)).Methods("GET")
+
 	r.HandleFunc(fmt.Sprintf("/%s/wallet", storeName), createWalletHandler(cliCtx)).Methods("POST")
 	r.HandleFunc(fmt.Sprintf("/%s/transaction", storeName), createTransactionHandler(cliCtx)).Methods("POST")
 	r.HandleFunc(fmt.Sprintf("/%s/transaction/sign", storeName), signTransactionHandler(cliCtx)).Methods("POST")
 	r.HandleFunc(fmt.Sprintf("/%s/transaction/complete", storeName), completeTransactionHandler(cliCtx)).Methods("POST")
+
 	r.HandleFunc(fmt.Sprintf("/%s/tx", storeName), createUnsignedTransactionHandler(cliCtx)).Methods("PUT")
 	r.HandleFunc(fmt.Sprintf("/%s/sign/multi", storeName), multiSignHandler(cliCtx)).Methods("POST")
+}
+
+func getWalletHandler(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		paramType := vars[walletAddress]
+
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/getWallet/%s", storeName, paramType), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
+			return
+		}
+
+		rest.PostProcessResponse(w, cliCtx, res)
+	}
+}
+
+func getTransactionHandler(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		paramType := vars[transactionID]
+
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/getTransaction/%s", storeName, paramType), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
+			return
+		}
+
+		rest.PostProcessResponse(w, cliCtx, res)
+	}
+}
+
+func walletsHandler(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		paramType := vars[walletAddress]
+
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/listWallets/%s", storeName, paramType), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
+			return
+		}
+		rest.PostProcessResponse(w, cliCtx, res)
+	}
+}
+
+func transactionsHandler(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		paramType := vars[transactionID]
+
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/listTransactions/%s", storeName, paramType), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
+			return
+		}
+		rest.PostProcessResponse(w, cliCtx, res)
+	}
 }
 
 type pubkey struct {
