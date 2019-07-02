@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	mtypes "github.com/cbarraford/cosmos-multisig/x/multisig/types"
+	"github.com/google/uuid"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -27,6 +28,8 @@ var (
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) {
 	r.HandleFunc(fmt.Sprintf("/%s/wallet", storeName), createWalletHandler(cliCtx)).Methods("POST")
 	r.HandleFunc(fmt.Sprintf("/%s/transaction", storeName), createTransactionHandler(cliCtx)).Methods("POST")
+	r.HandleFunc(fmt.Sprintf("/%s/transaction/sign", storeName), signTransactionHandler(cliCtx)).Methods("POST")
+	r.HandleFunc(fmt.Sprintf("/%s/transaction/complete", storeName), completeTransactionHandler(cliCtx)).Methods("POST")
 	r.HandleFunc(fmt.Sprintf("/%s/tx", storeName), createUnsignedTransactionHandler(cliCtx)).Methods("PUT")
 	r.HandleFunc(fmt.Sprintf("/%s/sign/multi", storeName), multiSignHandler(cliCtx)).Methods("POST")
 }
@@ -196,6 +199,98 @@ func createTransactionHandler(cliCtx context.CLIContext) http.HandlerFunc {
 
 		// create the message
 		msg := mtypes.NewMsgCreateTransaction(req.From, req.To, req.Coins)
+		err = msg.ValidateBasic()
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		utils.WriteGenerateStdTxResponse(w, cliCtx, baseReq, []sdk.Msg{msg})
+	}
+}
+
+type signTransaction struct {
+	BaseReq   rest.BaseReq `json:"base_req"`
+	UUID      string       `json:"uuid"`
+	Signature string       `json:"signature"`
+	PubKey    string       `json:"pub_key"`
+}
+
+func signTransactionHandler(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req signTransaction
+		var err error
+
+		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
+			return
+		}
+
+		baseReq := req.BaseReq.Sanitize()
+		if !baseReq.ValidateBasic(w) {
+			// TODO: is this needed?
+			// return
+		}
+
+		uid, err := uuid.Parse(req.UUID)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		pubkey, err := sdk.GetAccPubKeyBech32(req.PubKey)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		sig := mtypes.Signature{
+			PubKey:    pubkey,
+			Signature: req.Signature,
+		}
+
+		// create the message
+		msg := mtypes.NewMsgSignTransaction(uid, sig)
+		err = msg.ValidateBasic()
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		utils.WriteGenerateStdTxResponse(w, cliCtx, baseReq, []sdk.Msg{msg})
+	}
+}
+
+type completeTransaction struct {
+	BaseReq rest.BaseReq `json:"base_req"`
+	UUID    string       `json:"uuid"`
+	TxID    string       `json:"tx_id"`
+}
+
+func completeTransactionHandler(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req completeTransaction
+		var err error
+
+		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
+			return
+		}
+
+		baseReq := req.BaseReq.Sanitize()
+		if !baseReq.ValidateBasic(w) {
+			// TODO: is this needed?
+			// return
+		}
+
+		uid, err := uuid.Parse(req.UUID)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		// create the message
+		msg := mtypes.NewMsgCompleteTransaction(uid, req.TxID)
 		err = msg.ValidateBasic()
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())

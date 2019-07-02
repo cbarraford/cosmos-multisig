@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/cbarraford/cosmos-multisig/x/multisig/types"
+	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -27,6 +28,8 @@ func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 	multisigTxCmd.AddCommand(client.PostCommands(
 		GetCmdCreateWallet(cdc),
 		GetCmdCreateTransaction(cdc),
+		GetCmdSignTransaction(cdc),
+		GetCmdCompleteTransaction(cdc),
 	)...)
 
 	return multisigTxCmd
@@ -76,16 +79,12 @@ func GetCmdCreateTransaction(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "create-transaction [from] [to] [coins]",
 		Short: "create a new multi-signature transaction",
-		Args:  cobra.ExactArgs(3),
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var err error
 			cliCtx := context.NewCLIContext().WithCodec(cdc).WithAccountDecoder(cdc)
 
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
-
-			if err := cliCtx.EnsureAccountExists(); err != nil {
-				return err
-			}
 
 			from, err := sdk.AccAddressFromBech32(args[0])
 			if err != nil {
@@ -103,6 +102,82 @@ func GetCmdCreateTransaction(cdc *codec.Codec) *cobra.Command {
 			}
 
 			msg := types.NewMsgCreateTransaction(from, to, coins)
+			if err != nil {
+				return err
+			}
+			err = msg.ValidateBasic()
+			if err != nil {
+				return err
+			}
+
+			cliCtx.PrintResponse = true
+
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+}
+
+// GetCmdSignTransaction is the CLI command for saving a transaction signature
+func GetCmdSignTransaction(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "save-transaction-signature [uuid] [pubkey] [signature]",
+		Short: "Save a signature generated for a specific transaction",
+		Args:  cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+			cliCtx := context.NewCLIContext().WithCodec(cdc).WithAccountDecoder(cdc)
+
+			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+
+			uid, err := uuid.Parse(args[0])
+			if err != nil {
+				return err
+			}
+
+			pubkey, err := sdk.GetAccPubKeyBech32(args[1])
+			if err != nil {
+				return err
+			}
+
+			sig := types.Signature{
+				PubKey:    pubkey,
+				Signature: args[2],
+			}
+
+			msg := types.NewMsgSignTransaction(uid, sig)
+			if err != nil {
+				return err
+			}
+			err = msg.ValidateBasic()
+			if err != nil {
+				return err
+			}
+
+			cliCtx.PrintResponse = true
+
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+}
+
+// GetCmdCompleteTransaction is the CLI command for saving a transaction signature
+func GetCmdCompleteTransaction(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "complete-transaction [uuid] [transaction_id]",
+		Short: "Save a blockchain transaction id to a transaction",
+		Args:  cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+			cliCtx := context.NewCLIContext().WithCodec(cdc).WithAccountDecoder(cdc)
+
+			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+
+			uid, err := uuid.Parse(args[0])
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewMsgCompleteTransaction(uid, args[1])
 			if err != nil {
 				return err
 			}
