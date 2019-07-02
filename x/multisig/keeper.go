@@ -48,11 +48,6 @@ func (k Keeper) SetWallet(ctx sdk.Context, wallet MultiSigWallet) {
 	store.Set([]byte(address), k.cdc.MustMarshalBinaryBare(wallet))
 }
 
-func (k Keeper) GetWalletIterator(ctx sdk.Context) sdk.Iterator {
-	store := ctx.KVStore(k.storeKey)
-	return sdk.KVStorePrefixIterator(store, nil)
-}
-
 func (k Keeper) GetTransaction(ctx sdk.Context, uid uuid.UUID) Transaction {
 	key := fmt.Sprintf("transaction-%s", uid)
 	store := ctx.KVStore(k.storeKey)

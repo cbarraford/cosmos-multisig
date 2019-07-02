@@ -26,8 +26,8 @@ type (
 	MsgCreateTransaction   = types.MsgCreateTransaction
 	MsgSignTransaction     = types.MsgSignTransaction
 	MsgCompleteTransaction = types.MsgCompleteTransaction
-	QueryResResolve        = types.QueryResResolve
-	QueryResNames          = types.QueryResNames
+	QueryWallets           = types.QueryWallets
+	QueryTransactions      = types.QueryTransactions
 	Transaction            = types.Transaction
 	Signature              = types.Signature
 	MultiSigWallet         = types.MultiSigWallet

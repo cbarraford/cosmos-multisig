@@ -19,49 +19,28 @@ func GetQueryCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 		RunE:                       client.ValidateCmd,
 	}
 	msigQueryCmd.AddCommand(client.GetCommands(
-		GetCmdResolveName(storeKey, cdc),
-		GetCmdWhois(storeKey, cdc),
-		GetCmdNames(storeKey, cdc),
+		GetCmdWallet(storeKey, cdc),
+		GetCmdWallets(storeKey, cdc),
+		GetCmdTransaction(storeKey, cdc),
+		GetCmdTransactions(storeKey, cdc),
 	)...)
 	return msigQueryCmd
 }
 
-// GetCmdResolveName queries information about a name
-func GetCmdResolveName(queryRoute string, cdc *codec.Codec) *cobra.Command {
+// GetCmdWallet queries information about a domain
+func GetCmdWallet(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "resolve [name]",
-		Short: "resolve name",
+		Use:   "get-wallet [address]",
+		Short: "Get wallet by address",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			name := args[0]
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/resolve/%s", queryRoute, name), nil)
+			addr := args[0]
+
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/getWallet/%s", queryRoute, addr), nil)
 			if err != nil {
-				fmt.Printf("could not resolve name - %s \n", name)
-				return nil
-			}
-
-			var out types.QueryResResolve
-			cdc.MustUnmarshalJSON(res, &out)
-			return cliCtx.PrintOutput(out)
-		},
-	}
-}
-
-// GetCmdWhois queries information about a domain
-func GetCmdWhois(queryRoute string, cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "whois [name]",
-		Short: "Query whois info of name",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			name := args[0]
-
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/whois/%s", queryRoute, name), nil)
-			if err != nil {
-				fmt.Printf("could not resolve whois - %s \n", name)
+				fmt.Printf("could not resolve wallet - %s \n", addr)
 				return nil
 			}
 
@@ -72,22 +51,72 @@ func GetCmdWhois(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-// GetCmdNames queries a list of all names
-func GetCmdNames(queryRoute string, cdc *codec.Codec) *cobra.Command {
+// GetCmdWallets queries a list of wallets contains a specific public key
+func GetCmdWallets(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "names",
-		Short: "names",
-		// Args:  cobra.ExactArgs(1),
+		Use:   "query-wallets [pub_key]",
+		Short: "wallets",
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/names", queryRoute), nil)
+			pubKey := args[0]
+
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/listWallets/%s", queryRoute, pubKey), nil)
 			if err != nil {
-				fmt.Printf("could not get query names\n")
+				fmt.Printf("could not get query wallets\n")
 				return nil
 			}
 
-			var out types.QueryResNames
+			var out types.QueryWallets
+			cdc.MustUnmarshalJSON(res, &out)
+			return cliCtx.PrintOutput(out)
+		},
+	}
+}
+
+// GetCmdTransaction queries information about a domain
+func GetCmdTransaction(queryRoute string, cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "get-wallet [address]",
+		Short: "Get wallet by address",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			uid := args[0]
+
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/getTransaction/%s", queryRoute, uid), nil)
+			if err != nil {
+				fmt.Printf("could not resolve transaction - %s \n", uid)
+				return nil
+			}
+
+			var out types.Transaction
+			cdc.MustUnmarshalJSON(res, &out)
+			return cliCtx.PrintOutput(out)
+		},
+	}
+}
+
+// GetCmdTransactions queries a list of transaction for a specific wallet
+func GetCmdTransactions(queryRoute string, cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "query-transactions [wallet_address]",
+		Short: "transactions",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			addr := args[0]
+
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/listTransactions/%s", queryRoute, addr), nil)
+			if err != nil {
+				fmt.Printf("could not get query wallets\n")
+				return nil
+			}
+
+			var out types.QueryTransactions
 			cdc.MustUnmarshalJSON(res, &out)
 			return cliCtx.PrintOutput(out)
 		},

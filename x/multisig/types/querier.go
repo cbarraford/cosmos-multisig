@@ -2,20 +2,24 @@ package types
 
 import "strings"
 
-// Query Result Payload for a resolve query
-type QueryResResolve struct {
-	Value string `json:"value"`
-}
+type QueryWallets []MultiSigWallet
 
 // implement fmt.Stringer
-func (r QueryResResolve) String() string {
-	return r.Value
+func (n QueryWallets) String() string {
+	wallets := make([]string, len(n))
+	for i, wallet := range n {
+		wallets[i] = wallet.String()
+	}
+	return strings.Join(wallets[:], "\n")
 }
 
-// Query Result Payload for a names query
-type QueryResNames []string
+type QueryTransactions []Transaction
 
 // implement fmt.Stringer
-func (n QueryResNames) String() string {
-	return strings.Join(n[:], "\n")
+func (n QueryTransactions) String() string {
+	transactions := make([]string, len(n))
+	for i, transaction := range n {
+		transactions[i] = transaction.String()
+	}
+	return strings.Join(transactions[:], "\n")
 }
