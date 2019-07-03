@@ -12,16 +12,16 @@ type MsgCreateWallet struct {
 	Name     string           `json:"name"`
 	PubKeys  []string         `json:"pub_keys"`
 	MinSigTx int              `json:"min_sig_tx"`
-	Signers  []sdk.AccAddress `json:"owners"`
-	Address  sdk.AccAddress   `json:"address"`
+	Signers  []sdk.AccAddress `json:"signers"`
 }
 
 // NewMsgCreateWallet is a constructor function for MsgCreateWallet
-func NewMsgCreateWallet(name string, pubKeys []string, min int) MsgCreateWallet {
+func NewMsgCreateWallet(name string, pubKeys []string, min int, signers []sdk.AccAddress) MsgCreateWallet {
 	return MsgCreateWallet{
 		Name:     name,
 		PubKeys:  pubKeys,
 		MinSigTx: min,
+		Signers:  signers,
 	}
 }
 
@@ -33,9 +33,6 @@ func (msg MsgCreateWallet) Type() string { return "set_wallet" }
 
 // ValidateBasic runs stateless checks on the message
 func (msg MsgCreateWallet) ValidateBasic() sdk.Error {
-	if msg.Address.Empty() {
-		return sdk.ErrInvalidAddress(msg.Address.String())
-	}
 	if len(msg.PubKeys) < msg.MinSigTx {
 		return sdk.ErrUnknownRequest("Minimum signature transaction number cannot be larger than the number of public keys")
 	}
@@ -55,7 +52,7 @@ func (msg MsgCreateWallet) GetSignBytes() []byte {
 
 // GetSigners defines whose signature is required
 func (msg MsgCreateWallet) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.Address}
+	return msg.Signers
 }
 
 // MsgCreateTransaction defines a CreateTransaction message

@@ -1,6 +1,7 @@
 package multisig
 
 import (
+	"log"
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -39,11 +40,14 @@ func queryWallets(ctx sdk.Context, path []string, req abci.RequestQuery, keeper 
 	var walletList QueryWallets
 
 	iterator := keeper.GetIterator(ctx)
+	log.Printf("Got iterator: %+v", iterator.Valid())
 
 	for ; iterator.Valid(); iterator.Next() {
 		if strings.HasPrefix(string(iterator.Key()), "wallet-") {
 			address := strings.TrimPrefix(string(iterator.Key()), "wallet-")
+			log.Printf("Address: %s", address)
 			wallet := keeper.GetWallet(ctx, address)
+			log.Printf("Wallet: %+v", wallet)
 			for _, pubkey := range wallet.PubKeys {
 				if pubkey == path[0] {
 					walletList = append(walletList, wallet)

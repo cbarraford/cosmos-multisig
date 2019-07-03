@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 
@@ -14,6 +15,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
+	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 
@@ -34,16 +36,17 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 	r.HandleFunc(fmt.Sprintf("/%s/wallet/{%s}", storeName, walletAddress), getWalletHandler(cliCtx, storeName)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/transaction/{%s}", storeName, transactionID), getTransactionHandler(cliCtx, storeName)).Methods("GET")
 
-	r.HandleFunc(fmt.Sprintf("/%s/wallets/{%s}", storeName), walletsHandler(cliCtx, storeName)).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("/%s/transactions/{%s}", storeName), transactionsHandler(cliCtx, storeName)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/wallets/{%s}", storeName, walletAddress), walletsHandler(cliCtx, storeName)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/transactions/{%s}", storeName, transactionID), transactionsHandler(cliCtx, storeName)).Methods("GET")
 
 	r.HandleFunc(fmt.Sprintf("/%s/wallet", storeName), createWalletHandler(cliCtx)).Methods("POST")
 	r.HandleFunc(fmt.Sprintf("/%s/transaction", storeName), createTransactionHandler(cliCtx)).Methods("POST")
 	r.HandleFunc(fmt.Sprintf("/%s/transaction/sign", storeName), signTransactionHandler(cliCtx)).Methods("POST")
 	r.HandleFunc(fmt.Sprintf("/%s/transaction/complete", storeName), completeTransactionHandler(cliCtx)).Methods("POST")
-
 	r.HandleFunc(fmt.Sprintf("/%s/tx", storeName), createUnsignedTransactionHandler(cliCtx)).Methods("PUT")
 	r.HandleFunc(fmt.Sprintf("/%s/sign/multi", storeName), multiSignHandler(cliCtx)).Methods("POST")
+
+	authrest.RegisterTxRoutes(cliCtx, r)
 }
 
 func getWalletHandler(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
@@ -80,6 +83,7 @@ func walletsHandler(cliCtx context.CLIContext, storeName string) http.HandlerFun
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		paramType := vars[walletAddress]
+		log.Printf("Param %+v", paramType)
 
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/listWallets/%s", storeName, paramType), nil)
 		if err != nil {
@@ -377,6 +381,7 @@ type createWallet struct {
 	Address  string       `json:"address"`
 	MinSigTx int          `json:"min_sig_tx"`
 	PubKeys  []string     `json:"pub_keys"`
+	Signers  []string     `json:"signers"`
 }
 
 func createWalletHandler(cliCtx context.CLIContext) http.HandlerFunc {
@@ -391,12 +396,22 @@ func createWalletHandler(cliCtx context.CLIContext) http.HandlerFunc {
 
 		baseReq := req.BaseReq.Sanitize()
 		if !baseReq.ValidateBasic(w) {
-			// TODO: is this needed?
-			// return
+			return
+		}
+		log.Printf("REQ: %+v", req)
+
+		signers := make([]sdk.AccAddress, len(req.Signers))
+		for i, _ := range req.Signers {
+			signers[i], err = sdk.AccAddressFromBech32(req.Signers[i])
+			if err != nil {
+				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+				return
+			}
 		}
 
 		// create the message
-		msg := mtypes.NewMsgCreateWallet(req.Name, req.PubKeys, req.MinSigTx)
+		msg := mtypes.NewMsgCreateWallet(req.Name, req.PubKeys, req.MinSigTx, signers)
+		log.Printf("MSG: %+v", msg)
 		err = msg.ValidateBasic()
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())

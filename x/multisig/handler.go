@@ -2,6 +2,7 @@ package multisig
 
 import (
 	"fmt"
+	"log"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -29,15 +30,17 @@ func NewHandler(keeper Keeper) sdk.Handler {
 func handleMsgCreateWallet(ctx sdk.Context, keeper Keeper, msg MsgCreateWallet) sdk.Result {
 	var err error
 	// check the wallet does not already exist
-	wallet := keeper.GetWallet(ctx, msg.Address.String())
-	if !wallet.Address.Empty() {
-		return sdk.ErrUnauthorized("Wallet already exists").Result()
-	}
-	wallet, err = NewMultiSigWallet(msg.Name, msg.PubKeys, msg.MinSigTx)
+	wallet, err := NewMultiSigWallet(msg.Name, msg.PubKeys, msg.MinSigTx)
 	if err != nil {
 		return sdk.ErrUnknownRequest(
 			fmt.Sprintf("Error creating new wallet: %s", err.Error()),
 		).Result()
+	}
+	log.Printf("Wallet: %+v", wallet)
+	log.Printf("MSG: %+v", msg)
+	current := keeper.GetWallet(ctx, wallet.Address.String())
+	if !current.Address.Empty() {
+		return sdk.ErrUnauthorized("Wallet already exists").Result()
 	}
 	keeper.SetWallet(ctx, wallet)
 	return sdk.Result{}

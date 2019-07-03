@@ -38,18 +38,14 @@ func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 // GetCmdCreateWallet is the CLI command for sending a CreateWallet transaction
 func GetCmdCreateWallet(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "create-wallet [name] [min-signatures-required] [pub-keys]",
+		Use:   "create-wallet [name] [min-signatures-required] [pub-keys], [addresses]",
 		Short: "create a new multi-signature wallet",
-		Args:  cobra.ExactArgs(3),
+		Args:  cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var err error
 			cliCtx := context.NewCLIContext().WithCodec(cdc).WithAccountDecoder(cdc)
 
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
-
-			if err := cliCtx.EnsureAccountExists(); err != nil {
-				return err
-			}
 
 			minSigs, err := strconv.ParseInt(args[1], 0, 64)
 			if err != nil {
@@ -58,7 +54,16 @@ func GetCmdCreateWallet(cdc *codec.Codec) *cobra.Command {
 
 			pubKeys := strings.Split(args[2], ",")
 
-			msg := types.NewMsgCreateWallet(args[0], pubKeys, int(minSigs))
+			addrs := strings.Split(args[3], ",")
+			signers := make([]sdk.AccAddress, len(addrs))
+			for i, addr := range addrs {
+				signers[i], err = sdk.AccAddressFromBech32(addr)
+				if err != nil {
+					return err
+				}
+			}
+
+			msg := types.NewMsgCreateWallet(args[0], pubKeys, int(minSigs), signers)
 			if err != nil {
 				return err
 			}

@@ -5,6 +5,7 @@ go 1.12
 require (
 	github.com/cosmos/cosmos-sdk v0.28.2-0.20190616100639-18415eedaf25
 	github.com/google/uuid v1.1.1
+	github.com/gorilla/handlers v1.4.0
 	github.com/gorilla/mux v1.7.0
 	github.com/mattn/go-isatty v0.0.7 // indirect
 	github.com/prometheus/procfs v0.0.0-20190328153300-af7bedc223fb // indirect

@@ -2,6 +2,7 @@ package multisig
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -67,6 +68,7 @@ func (k Keeper) SetTransaction(ctx sdk.Context, transaction Transaction) {
 }
 
 func (k Keeper) GetIterator(ctx sdk.Context) sdk.Iterator {
+	log.Printf("Iterator key: %s", k.storeKey)
 	store := ctx.KVStore(k.storeKey)
 	return sdk.KVStorePrefixIterator(store, nil)
 }
