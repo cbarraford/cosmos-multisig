@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
@@ -15,7 +16,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
-	authrest "github.com/cosmos/cosmos-sdk/x/auth/client/rest"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 
@@ -46,7 +46,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 	r.HandleFunc(fmt.Sprintf("/%s/tx", storeName), createUnsignedTransactionHandler(cliCtx)).Methods("PUT")
 	r.HandleFunc(fmt.Sprintf("/%s/sign/multi", storeName), multiSignHandler(cliCtx)).Methods("POST")
 
-	authrest.RegisterTxRoutes(cliCtx, r)
+	r.HandleFunc(fmt.Sprintf("/%s/broadcast", storeName), broadcastTxRequest(cliCtx)).Methods("POST")
 }
 
 func getWalletHandler(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
@@ -398,7 +398,6 @@ func createWalletHandler(cliCtx context.CLIContext) http.HandlerFunc {
 		if !baseReq.ValidateBasic(w) {
 			return
 		}
-		log.Printf("REQ: %+v", req)
 
 		signers := make([]sdk.AccAddress, len(req.Signers))
 		for i, _ := range req.Signers {
@@ -411,7 +410,6 @@ func createWalletHandler(cliCtx context.CLIContext) http.HandlerFunc {
 
 		// create the message
 		msg := mtypes.NewMsgCreateWallet(req.Name, req.PubKeys, req.MinSigTx, signers)
-		log.Printf("MSG: %+v", msg)
 		err = msg.ValidateBasic()
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
@@ -431,4 +429,52 @@ func validateMultisigThreshold(k, nKeys int) error {
 			"threshold k of n multisignature: %d < %d", nKeys, k)
 	}
 	return nil
+}
+
+// BroadcastReq defines a tx broadcasting request.
+type BroadcastReq struct {
+	Tx   types.StdTx `json:"tx"`
+	Mode string      `json:"mode"`
+}
+
+// broadcastTxRequest implements a tx broadcasting handler that is responsible
+// for broadcasting a valid and signed tx to a full node. The tx can be
+// broadcasted via a sync|async|block mechanism.
+func broadcastTxRequest(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req BroadcastReq
+
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			log.Printf("Foo1")
+			return
+		}
+
+		err = cliCtx.Codec.UnmarshalJSON(body, &req)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			log.Printf("Foo2")
+			return
+		}
+
+		txBytes, err := cliCtx.Codec.MarshalBinaryLengthPrefixed(req.Tx)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
+			log.Printf("Foo3")
+			return
+		}
+
+		cliCtx = cliCtx.WithBroadcastMode(req.Mode)
+
+		res, err := cliCtx.BroadcastTx(txBytes)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
+			log.Printf("Foo4")
+			return
+		}
+
+		log.Printf("Foo5")
+		rest.PostProcessResponse(w, cliCtx, res)
+	}
 }

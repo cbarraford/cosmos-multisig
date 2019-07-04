@@ -9,9 +9,9 @@ const RouterKey = ModuleName // this was defined in your key.go file
 
 // MsgCreateWallet defines a CreateWallet message
 type MsgCreateWallet struct {
+	MinSigTx int              `json:"min_sig_tx"`
 	Name     string           `json:"name"`
 	PubKeys  []string         `json:"pub_keys"`
-	MinSigTx int              `json:"min_sig_tx"`
 	Signers  []sdk.AccAddress `json:"signers"`
 }
 
