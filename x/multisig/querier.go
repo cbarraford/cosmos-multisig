@@ -1,12 +1,10 @@
 package multisig
 
 import (
-	"log"
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/google/uuid"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
@@ -40,14 +38,11 @@ func queryWallets(ctx sdk.Context, path []string, req abci.RequestQuery, keeper 
 	var walletList QueryWallets
 
 	iterator := keeper.GetIterator(ctx)
-	log.Printf("Got iterator: %+v", iterator.Valid())
 
 	for ; iterator.Valid(); iterator.Next() {
 		if strings.HasPrefix(string(iterator.Key()), "wallet-") {
 			address := strings.TrimPrefix(string(iterator.Key()), "wallet-")
-			log.Printf("Address: %s", address)
 			wallet := keeper.GetWallet(ctx, address)
-			log.Printf("Wallet: %+v", wallet)
 			for _, pubkey := range wallet.PubKeys {
 				if pubkey == path[0] {
 					walletList = append(walletList, wallet)
@@ -84,11 +79,7 @@ func queryTransactions(ctx sdk.Context, path []string, req abci.RequestQuery, ke
 	for ; iterator.Valid(); iterator.Next() {
 		if strings.HasPrefix(string(iterator.Key()), "transaction-") {
 			uidStr := strings.TrimPrefix(string(iterator.Key()), "transaction-")
-			uid, err := uuid.Parse(uidStr)
-			if err != nil {
-				return []byte{}, sdk.ErrUnknownRequest(err.Error())
-			}
-			transaction := keeper.GetTransaction(ctx, uid)
+			transaction := keeper.GetTransaction(ctx, uidStr)
 			if transaction.From.String() == path[0] {
 				transactionList = append(transactionList, transaction)
 			}
@@ -106,12 +97,7 @@ func queryTransactions(ctx sdk.Context, path []string, req abci.RequestQuery, ke
 
 func getTransaction(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 
-	uid, err := uuid.Parse(path[0])
-	if err != nil {
-		return []byte{}, sdk.ErrUnknownRequest(err.Error())
-	}
-
-	wallet := keeper.GetTransaction(ctx, uid)
+	wallet := keeper.GetTransaction(ctx, path[0])
 
 	res, err := codec.MarshalJSONIndent(keeper.cdc, wallet)
 	if err != nil {

@@ -57,19 +57,23 @@ func (msg MsgCreateWallet) GetSigners() []sdk.AccAddress {
 
 // MsgCreateTransaction defines a CreateTransaction message
 type MsgCreateTransaction struct {
-	UUID  uuid.UUID      `json:"uuid"`
-	From  sdk.AccAddress `json:"from_address"`
-	To    sdk.AccAddress `json:"to_address"`
-	Coins sdk.Coins      `json:"coins"`
+	Amount  sdk.Int          `json:"amount"`
+	Denom   string           `json:"denom"`
+	From    sdk.AccAddress   `json:"from_address"`
+	Signers []sdk.AccAddress `json:"signers"`
+	To      sdk.AccAddress   `json:"to_address"`
+	UUID    string           `json:"uuid"`
 }
 
 // NewMsgCreateTransaction is a constructor function for MsgCreateTransaction
-func NewMsgCreateTransaction(from, to sdk.AccAddress, coins sdk.Coins) MsgCreateTransaction {
+func NewMsgCreateTransaction(from, to sdk.AccAddress, amount sdk.Int, denom string, signers []sdk.AccAddress) MsgCreateTransaction {
 	return MsgCreateTransaction{
-		UUID:  uuid.New(),
-		From:  from,
-		To:    to,
-		Coins: coins,
+		UUID:    uuid.New().String(),
+		From:    from,
+		To:      to,
+		Amount:  amount,
+		Denom:   denom,
+		Signers: signers,
 	}
 }
 
@@ -87,12 +91,15 @@ func (msg MsgCreateTransaction) ValidateBasic() sdk.Error {
 	if msg.To.Empty() {
 		return sdk.ErrInvalidAddress(msg.To.String())
 	}
-	if msg.Coins.IsZero() {
-		return sdk.ErrUnknownRequest("Cannot have zero coins")
-	}
-	if msg.Coins.IsValid() {
-		return sdk.ErrUnknownRequest("Coins must be valid")
-	}
+	/*
+		if msg.Coins.IsZero() {
+			return sdk.ErrUnknownRequest("Cannot have zero coins")
+		}
+		if msg.Coins.IsValid() {
+			// TODO: readd this back at some point
+			//return sdk.ErrUnknownRequest("Coins must be valid")
+		}
+	*/
 	return nil
 }
 
@@ -103,17 +110,17 @@ func (msg MsgCreateTransaction) GetSignBytes() []byte {
 
 // GetSigners defines whose signature is required
 func (msg MsgCreateTransaction) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.From}
+	return msg.Signers
 }
 
 // MsgSignTransaction defines a SignTransaction message
 type MsgSignTransaction struct {
-	UUID      uuid.UUID `json:"uuid"`
+	UUID      string    `json:"uuid"`
 	Signature Signature `json:"signature"`
 }
 
 // NewMsgSignTransaction is a constructor function for MsgCreateTransaction
-func NewMsgSignTransaction(uid uuid.UUID, sig Signature) MsgSignTransaction {
+func NewMsgSignTransaction(uid string, sig Signature) MsgSignTransaction {
 	return MsgSignTransaction{
 		UUID:      uid,
 		Signature: sig,
@@ -152,12 +159,12 @@ func (msg MsgSignTransaction) GetSigners() []sdk.AccAddress {
 
 // MsgCompleteTransaction defines complete a transaction
 type MsgCompleteTransaction struct {
-	UUID uuid.UUID `json:"uuid"`
-	TxID string    `json:"tx_id"`
+	UUID string `json:"uuid"`
+	TxID string `json:"tx_id"`
 }
 
 // NewMsgCompleteTransaction is a constructor function for MsgCompleteTransaction
-func NewMsgCompleteTransaction(uid uuid.UUID, txID string) MsgCompleteTransaction {
+func NewMsgCompleteTransaction(uid string, txID string) MsgCompleteTransaction {
 	return MsgCompleteTransaction{
 		UUID: uid,
 		TxID: txID,

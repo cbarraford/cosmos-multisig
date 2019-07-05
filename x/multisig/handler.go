@@ -51,7 +51,7 @@ func handleMsgCreateTransaction(ctx sdk.Context, keeper Keeper, msg MsgCreateTra
 		return sdk.ErrUnauthorized("Transaction already exists").Result()
 	}
 	wallet := keeper.GetWallet(ctx, msg.From.String())
-	if !wallet.Address.Empty() {
+	if wallet.Address.Empty() {
 		return sdk.ErrUnauthorized("No registered multi-signature wallet for 'from' address").Result()
 	}
 	sigs := make([]Signature, len(wallet.PubKeys))
@@ -64,10 +64,13 @@ func handleMsgCreateTransaction(ctx sdk.Context, keeper Keeper, msg MsgCreateTra
 			).Result()
 		}
 	}
+	coins := sdk.NewCoins(
+		sdk.NewCoin(msg.Denom, msg.Amount),
+	)
 	transaction = NewTransaction(
 		msg.From,
 		msg.To,
-		msg.Coins,
+		coins,
 		ctx.BlockHeight(),
 		sigs,
 	)

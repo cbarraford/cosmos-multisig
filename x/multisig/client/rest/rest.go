@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	mtypes "github.com/cbarraford/cosmos-multisig/x/multisig/types"
-	"github.com/google/uuid"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
@@ -252,7 +251,9 @@ type createTransaction struct {
 	BaseReq rest.BaseReq   `json:"base_req"`
 	From    sdk.AccAddress `json:"from"`
 	To      sdk.AccAddress `json:"to"`
-	Coins   sdk.Coins      `json:"coins"`
+	Amount  sdk.Int        `json:"amount"`
+	Denom   string         `json:"denom"`
+	Signers []string       `json:"signers"`
 }
 
 func createTransactionHandler(cliCtx context.CLIContext) http.HandlerFunc {
@@ -267,12 +268,20 @@ func createTransactionHandler(cliCtx context.CLIContext) http.HandlerFunc {
 
 		baseReq := req.BaseReq.Sanitize()
 		if !baseReq.ValidateBasic(w) {
-			// TODO: is this needed?
-			// return
+			return
+		}
+
+		signers := make([]sdk.AccAddress, len(req.Signers))
+		for i, _ := range req.Signers {
+			signers[i], err = sdk.AccAddressFromBech32(req.Signers[i])
+			if err != nil {
+				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+				return
+			}
 		}
 
 		// create the message
-		msg := mtypes.NewMsgCreateTransaction(req.From, req.To, req.Coins)
+		msg := mtypes.NewMsgCreateTransaction(req.From, req.To, req.Amount, req.Denom, signers)
 		err = msg.ValidateBasic()
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
@@ -306,12 +315,6 @@ func signTransactionHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			// return
 		}
 
-		uid, err := uuid.Parse(req.UUID)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
 		pubkey, err := sdk.GetAccPubKeyBech32(req.PubKey)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
@@ -324,7 +327,7 @@ func signTransactionHandler(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		// create the message
-		msg := mtypes.NewMsgSignTransaction(uid, sig)
+		msg := mtypes.NewMsgSignTransaction(req.UUID, sig)
 		err = msg.ValidateBasic()
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
@@ -357,14 +360,8 @@ func completeTransactionHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			// return
 		}
 
-		uid, err := uuid.Parse(req.UUID)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
 		// create the message
-		msg := mtypes.NewMsgCompleteTransaction(uid, req.TxID)
+		msg := mtypes.NewMsgCompleteTransaction(req.UUID, req.TxID)
 		err = msg.ValidateBasic()
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())

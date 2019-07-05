@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/cbarraford/cosmos-multisig/x/multisig/types"
-	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -82,9 +81,9 @@ func GetCmdCreateWallet(cdc *codec.Codec) *cobra.Command {
 // GetCmdCreateTransaction is the CLI command for sending a CreateTransaction transaction
 func GetCmdCreateTransaction(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "create-transaction [from] [to] [coins]",
+		Use:   "create-transaction [from] [to] [coins] [signers]",
 		Short: "create a new multi-signature transaction",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var err error
 			cliCtx := context.NewCLIContext().WithCodec(cdc).WithAccountDecoder(cdc)
@@ -106,7 +105,16 @@ func GetCmdCreateTransaction(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			msg := types.NewMsgCreateTransaction(from, to, coins)
+			addrs := strings.Split(args[3], ",")
+			signers := make([]sdk.AccAddress, len(addrs))
+			for i, addr := range addrs {
+				signers[i], err = sdk.AccAddressFromBech32(addr)
+				if err != nil {
+					return err
+				}
+			}
+
+			msg := types.NewMsgCreateTransaction(from, to, coins[0].Amount, coins[0].Denom, signers)
 			if err != nil {
 				return err
 			}
@@ -134,11 +142,6 @@ func GetCmdSignTransaction(cdc *codec.Codec) *cobra.Command {
 
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 
-			uid, err := uuid.Parse(args[0])
-			if err != nil {
-				return err
-			}
-
 			pubkey, err := sdk.GetAccPubKeyBech32(args[1])
 			if err != nil {
 				return err
@@ -149,7 +152,7 @@ func GetCmdSignTransaction(cdc *codec.Codec) *cobra.Command {
 				Signature: args[2],
 			}
 
-			msg := types.NewMsgSignTransaction(uid, sig)
+			msg := types.NewMsgSignTransaction(args[0], sig)
 			if err != nil {
 				return err
 			}
@@ -177,12 +180,7 @@ func GetCmdCompleteTransaction(cdc *codec.Codec) *cobra.Command {
 
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 
-			uid, err := uuid.Parse(args[0])
-			if err != nil {
-				return err
-			}
-
-			msg := types.NewMsgCompleteTransaction(uid, args[1])
+			msg := types.NewMsgCompleteTransaction(args[0], args[1])
 			if err != nil {
 				return err
 			}

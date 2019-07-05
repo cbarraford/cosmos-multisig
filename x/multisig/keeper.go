@@ -2,7 +2,6 @@ package multisig
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -49,7 +48,7 @@ func (k Keeper) SetWallet(ctx sdk.Context, wallet MultiSigWallet) {
 	store.Set([]byte(address), k.cdc.MustMarshalBinaryBare(wallet))
 }
 
-func (k Keeper) GetTransaction(ctx sdk.Context, uid uuid.UUID) Transaction {
+func (k Keeper) GetTransaction(ctx sdk.Context, uid string) Transaction {
 	key := fmt.Sprintf("transaction-%s", uid)
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
@@ -68,7 +67,6 @@ func (k Keeper) SetTransaction(ctx sdk.Context, transaction Transaction) {
 }
 
 func (k Keeper) GetIterator(ctx sdk.Context) sdk.Iterator {
-	log.Printf("Iterator key: %s", k.storeKey)
 	store := ctx.KVStore(k.storeKey)
 	return sdk.KVStorePrefixIterator(store, nil)
 }
