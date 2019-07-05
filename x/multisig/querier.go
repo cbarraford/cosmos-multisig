@@ -46,6 +46,7 @@ func queryWallets(ctx sdk.Context, path []string, req abci.RequestQuery, keeper 
 			for _, pubkey := range wallet.PubKeys {
 				if pubkey == path[0] {
 					walletList = append(walletList, wallet)
+					break
 				}
 			}
 
