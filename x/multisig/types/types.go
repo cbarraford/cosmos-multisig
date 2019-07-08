@@ -79,12 +79,12 @@ func (w MultiSigWallet) String() string {
 }
 
 type Signature struct {
-	PubKey    crypto.PubKey `json:"pub_key"`
-	Signature string        `json:"signature"`
+	PubKey    string `json:"pub_key"`
+	Signature string `json:"signature"`
 }
 
 type Transaction struct {
-	UUID       uuid.UUID      `json:"uuid"`
+	UUID       string         `json:"uuid"`
 	From       sdk.AccAddress `json:"from_address"`
 	To         sdk.AccAddress `json:"to_address"`
 	Coins      sdk.Coins      `json:"coins"`
@@ -95,7 +95,7 @@ type Transaction struct {
 
 func NewTransaction(from, to sdk.AccAddress, coins sdk.Coins, height int64, signatures []Signature) Transaction {
 	return Transaction{
-		UUID:       uuid.New(),
+		UUID:       uuid.New().String(),
 		From:       from,
 		To:         to,
 		Coins:      coins,
@@ -105,10 +105,14 @@ func NewTransaction(from, to sdk.AccAddress, coins sdk.Coins, height int64, sign
 }
 
 // adds a signature to Transaction. If signature already exists, overwrite
-func (t *Transaction) AddSignature(input Signature) error {
+func (t *Transaction) AddSignature(pubkey, signature string) error {
+	fmt.Printf("Adding Sig: %s --> %s\n\n", pubkey, signature)
+	fmt.Printf("Transaction: %+v\n", t)
 	for i, sig := range t.Signatures {
-		if sig.PubKey == input.PubKey {
-			t.Signatures[i].Signature = input.Signature
+		fmt.Println(pubkey)
+		fmt.Println(sig.PubKey)
+		if sig.PubKey == pubkey {
+			t.Signatures[i].Signature = signature
 			return nil
 		}
 	}

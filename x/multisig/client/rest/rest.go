@@ -297,6 +297,7 @@ type signTransaction struct {
 	UUID      string       `json:"uuid"`
 	Signature string       `json:"signature"`
 	PubKey    string       `json:"pub_key"`
+	Signers   []string     `json:"signers"`
 }
 
 func signTransactionHandler(cliCtx context.CLIContext) http.HandlerFunc {
@@ -315,19 +316,16 @@ func signTransactionHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			// return
 		}
 
-		pubkey, err := sdk.GetAccPubKeyBech32(req.PubKey)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
+		signers := make([]sdk.AccAddress, len(req.Signers))
+		for i, _ := range req.Signers {
+			signers[i], err = sdk.AccAddressFromBech32(req.Signers[i])
+			if err != nil {
+				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+				return
+			}
 		}
-
-		sig := mtypes.Signature{
-			PubKey:    pubkey,
-			Signature: req.Signature,
-		}
-
 		// create the message
-		msg := mtypes.NewMsgSignTransaction(req.UUID, sig)
+		msg := mtypes.NewMsgSignTransaction(req.UUID, req.PubKey, req.Signature, signers)
 		err = msg.ValidateBasic()
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
@@ -342,6 +340,7 @@ type completeTransaction struct {
 	BaseReq rest.BaseReq `json:"base_req"`
 	UUID    string       `json:"uuid"`
 	TxID    string       `json:"tx_id"`
+	Signers []string     `json:"signers"`
 }
 
 func completeTransactionHandler(cliCtx context.CLIContext) http.HandlerFunc {
@@ -360,8 +359,17 @@ func completeTransactionHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			// return
 		}
 
+		signers := make([]sdk.AccAddress, len(req.Signers))
+		for i, _ := range req.Signers {
+			signers[i], err = sdk.AccAddressFromBech32(req.Signers[i])
+			if err != nil {
+				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+				return
+			}
+		}
+
 		// create the message
-		msg := mtypes.NewMsgCompleteTransaction(req.UUID, req.TxID)
+		msg := mtypes.NewMsgCompleteTransaction(req.UUID, req.TxID, signers)
 		err = msg.ValidateBasic()
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
@@ -444,21 +452,18 @@ func broadcastTxRequest(cliCtx context.CLIContext) http.HandlerFunc {
 		body, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			log.Printf("Foo1")
 			return
 		}
 
 		err = cliCtx.Codec.UnmarshalJSON(body, &req)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			log.Printf("Foo2")
 			return
 		}
 
 		txBytes, err := cliCtx.Codec.MarshalBinaryLengthPrefixed(req.Tx)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
-			log.Printf("Foo3")
 			return
 		}
 
@@ -467,11 +472,9 @@ func broadcastTxRequest(cliCtx context.CLIContext) http.HandlerFunc {
 		res, err := cliCtx.BroadcastTx(txBytes)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
-			log.Printf("Foo4")
 			return
 		}
 
-		log.Printf("Foo5")
 		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }

@@ -56,13 +56,7 @@ func handleMsgCreateTransaction(ctx sdk.Context, keeper Keeper, msg MsgCreateTra
 	}
 	sigs := make([]Signature, len(wallet.PubKeys))
 	for i, pubkey := range wallet.PubKeys {
-		var err error
-		sigs[i].PubKey, err = sdk.GetAccPubKeyBech32(pubkey)
-		if err != nil {
-			return sdk.ErrUnknownRequest(
-				fmt.Sprintf("Error creating new transaction: %s", err.Error()),
-			).Result()
-		}
+		sigs[i].PubKey = pubkey
 	}
 	coins := sdk.NewCoins(
 		sdk.NewCoin(msg.Denom, msg.Amount),
@@ -82,10 +76,10 @@ func handleMsgCreateTransaction(ctx sdk.Context, keeper Keeper, msg MsgCreateTra
 func handleMsgSignTransaction(ctx sdk.Context, keeper Keeper, msg MsgSignTransaction) sdk.Result {
 	var err error
 	transaction := keeper.GetTransaction(ctx, msg.UUID)
-	if !transaction.From.Empty() {
+	if transaction.From.Empty() {
 		return sdk.ErrUnauthorized("No transaction found.").Result()
 	}
-	err = transaction.AddSignature(msg.Signature)
+	err = transaction.AddSignature(msg.PubKey, msg.Signature)
 	if err != nil {
 		return sdk.ErrUnauthorized(
 			fmt.Sprintf("Failed to sign transaction: %s", err.Error()),

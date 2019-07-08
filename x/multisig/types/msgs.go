@@ -115,15 +115,19 @@ func (msg MsgCreateTransaction) GetSigners() []sdk.AccAddress {
 
 // MsgSignTransaction defines a SignTransaction message
 type MsgSignTransaction struct {
-	UUID      string    `json:"uuid"`
-	Signature Signature `json:"signature"`
+	PubKey    string           `json:"pubkey"`
+	Signature string           `json:"signature"`
+	Signers   []sdk.AccAddress `json:"signers"`
+	UUID      string           `json:"uuid"`
 }
 
 // NewMsgSignTransaction is a constructor function for MsgCreateTransaction
-func NewMsgSignTransaction(uid string, sig Signature) MsgSignTransaction {
+func NewMsgSignTransaction(uid, pubkey, sig string, signers []sdk.AccAddress) MsgSignTransaction {
 	return MsgSignTransaction{
 		UUID:      uid,
+		PubKey:    pubkey,
 		Signature: sig,
+		Signers:   signers,
 	}
 }
 
@@ -138,10 +142,10 @@ func (msg MsgSignTransaction) ValidateBasic() sdk.Error {
 	if len(msg.UUID) == 0 {
 		return sdk.ErrUnknownRequest("UUID cannot be blank")
 	}
-	if len(msg.Signature.PubKey.Bytes()) == 0 {
+	if msg.PubKey == "" {
 		return sdk.ErrUnknownRequest("Pubkey cannot be blank")
 	}
-	if msg.Signature.Signature == "" {
+	if msg.Signature == "" {
 		return sdk.ErrUnknownRequest("Signature cannot be blank")
 	}
 	return nil
@@ -154,20 +158,22 @@ func (msg MsgSignTransaction) GetSignBytes() []byte {
 
 // GetSigners defines whose signature is required
 func (msg MsgSignTransaction) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{}
+	return msg.Signers
 }
 
 // MsgCompleteTransaction defines complete a transaction
 type MsgCompleteTransaction struct {
-	UUID string `json:"uuid"`
-	TxID string `json:"tx_id"`
+	Signers []sdk.AccAddress `json:"signers"`
+	TxID    string           `json:"tx_id"`
+	UUID    string           `json:"uuid"`
 }
 
 // NewMsgCompleteTransaction is a constructor function for MsgCompleteTransaction
-func NewMsgCompleteTransaction(uid string, txID string) MsgCompleteTransaction {
+func NewMsgCompleteTransaction(uid, txID string, signers []sdk.AccAddress) MsgCompleteTransaction {
 	return MsgCompleteTransaction{
-		UUID: uid,
-		TxID: txID,
+		UUID:    uid,
+		TxID:    txID,
+		Signers: signers,
 	}
 }
 
@@ -195,5 +201,5 @@ func (msg MsgCompleteTransaction) GetSignBytes() []byte {
 
 // GetSigners defines whose signature is required
 func (msg MsgCompleteTransaction) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{}
+	return msg.Signers
 }

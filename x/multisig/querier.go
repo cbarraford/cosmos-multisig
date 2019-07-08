@@ -98,9 +98,9 @@ func queryTransactions(ctx sdk.Context, path []string, req abci.RequestQuery, ke
 
 func getTransaction(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 
-	wallet := keeper.GetTransaction(ctx, path[0])
+	transaction := keeper.GetTransaction(ctx, path[0])
 
-	res, err := codec.MarshalJSONIndent(keeper.cdc, wallet)
+	res, err := codec.MarshalJSONIndent(keeper.cdc, transaction)
 	if err != nil {
 		panic("could not marshal result to JSON")
 	}

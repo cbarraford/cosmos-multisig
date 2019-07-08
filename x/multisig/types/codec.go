@@ -14,4 +14,6 @@ func init() {
 func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgCreateWallet{}, "multisig/CreateWallet", nil)
 	cdc.RegisterConcrete(MsgCreateTransaction{}, "multisig/CreateTransaction", nil)
+	cdc.RegisterConcrete(MsgSignTransaction{}, "multisig/SignTransaction", nil)
+	cdc.RegisterConcrete(MsgCompleteTransaction{}, "multisig/CompleteTransaction", nil)
 }

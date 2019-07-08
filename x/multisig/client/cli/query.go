@@ -78,8 +78,8 @@ func GetCmdWallets(queryRoute string, cdc *codec.Codec) *cobra.Command {
 // GetCmdTransaction queries information about a domain
 func GetCmdTransaction(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "get-wallet [address]",
-		Short: "Get wallet by address",
+		Use:   "get-transaction [uuid]",
+		Short: "Get transaction by uuid",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)

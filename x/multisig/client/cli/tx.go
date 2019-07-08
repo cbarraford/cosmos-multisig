@@ -133,26 +133,25 @@ func GetCmdCreateTransaction(cdc *codec.Codec) *cobra.Command {
 // GetCmdSignTransaction is the CLI command for saving a transaction signature
 func GetCmdSignTransaction(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "save-transaction-signature [uuid] [pubkey] [signature]",
+		Use:   "save-transaction-signature [uuid] [pubkey] [signature] [signers]",
 		Short: "Save a signature generated for a specific transaction",
-		Args:  cobra.ExactArgs(3),
+		Args:  cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var err error
 			cliCtx := context.NewCLIContext().WithCodec(cdc).WithAccountDecoder(cdc)
 
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 
-			pubkey, err := sdk.GetAccPubKeyBech32(args[1])
-			if err != nil {
-				return err
+			addrs := strings.Split(args[3], ",")
+			signers := make([]sdk.AccAddress, len(addrs))
+			for i, addr := range addrs {
+				signers[i], err = sdk.AccAddressFromBech32(addr)
+				if err != nil {
+					return err
+				}
 			}
 
-			sig := types.Signature{
-				PubKey:    pubkey,
-				Signature: args[2],
-			}
-
-			msg := types.NewMsgSignTransaction(args[0], sig)
+			msg := types.NewMsgSignTransaction(args[0], args[1], args[2], signers)
 			if err != nil {
 				return err
 			}
@@ -171,7 +170,7 @@ func GetCmdSignTransaction(cdc *codec.Codec) *cobra.Command {
 // GetCmdCompleteTransaction is the CLI command for saving a transaction signature
 func GetCmdCompleteTransaction(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "complete-transaction [uuid] [transaction_id]",
+		Use:   "complete-transaction [uuid] [transaction_id] [signers]",
 		Short: "Save a blockchain transaction id to a transaction",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -180,7 +179,16 @@ func GetCmdCompleteTransaction(cdc *codec.Codec) *cobra.Command {
 
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 
-			msg := types.NewMsgCompleteTransaction(args[0], args[1])
+			addrs := strings.Split(args[3], ",")
+			signers := make([]sdk.AccAddress, len(addrs))
+			for i, addr := range addrs {
+				signers[i], err = sdk.AccAddressFromBech32(addr)
+				if err != nil {
+					return err
+				}
+			}
+
+			msg := types.NewMsgCompleteTransaction(args[0], args[1], signers)
 			if err != nil {
 				return err
 			}
