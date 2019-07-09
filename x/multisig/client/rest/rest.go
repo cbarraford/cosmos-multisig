@@ -109,6 +109,7 @@ func transactionsHandler(cliCtx context.CLIContext, storeName string) http.Handl
 
 type multiSign struct {
 	Signatures []string `json:"signatures"`
+	Slots      string   `json:"slots"`
 }
 
 func multiSignHandler(cliCtx context.CLIContext) http.HandlerFunc {
@@ -137,8 +138,42 @@ func multiSignHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			}
 		}
 
-		// prepend base string "CgUIAhIBwB"
-		signatures = append([]string{"CgUIAhIBwB"}, signatures...)
+		var totalPrefix string
+		switch len(slots) {
+		case 2:
+			totalPrefix = "Ah"
+			slots = fmt.Printf("%s0", slots)
+		case 3:
+			totalPrefix = "Ax"
+		//case 4:
+		//totalPrefix = "BB"
+		default:
+			rest.WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("Number of public keys (%d) in this wallet is not currently supported", len(slots)))
+		}
+
+		var sigPrefix string
+		switch slots {
+		case "001":
+			sigPrefix = "IB"
+		case "010":
+			sigPrefix = "QB"
+		case "011":
+			sigPrefix = "YB"
+		case "100":
+			sigPrefix = "qB"
+		case "101":
+			sigPrefix = "oB"
+		case "110":
+			sigPrefix = "wB"
+		case "111":
+			sigPrefix = "4B"
+		default:
+			rest.WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("Number of public keys (%d) in this wallet is not currently supported", len(slots)))
+		}
+
+		prefix := fmt.Sprintf("CgUI%sIB%s", totalPrefix, sigPrefix)
+
+		signatures = append([]string{prefix}, signatures...)
 		multisignature := strings.Join(signatures[:], "JA")
 
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
