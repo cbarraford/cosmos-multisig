@@ -79,7 +79,7 @@ func handleMsgSignTransaction(ctx sdk.Context, keeper Keeper, msg MsgSignTransac
 	if transaction.From.Empty() {
 		return sdk.ErrUnauthorized("No transaction found.").Result()
 	}
-	err = transaction.AddSignature(msg.PubKey, msg.Signature)
+	err = transaction.AddSignature(msg.PubKey, msg.PubKeyBase64, msg.Signature)
 	if err != nil {
 		return sdk.ErrUnauthorized(
 			fmt.Sprintf("Failed to sign transaction: %s", err.Error()),
@@ -92,7 +92,7 @@ func handleMsgSignTransaction(ctx sdk.Context, keeper Keeper, msg MsgSignTransac
 // Handle a message to complete transaction
 func handleMsgCompleteTransaction(ctx sdk.Context, keeper Keeper, msg MsgCompleteTransaction) sdk.Result {
 	transaction := keeper.GetTransaction(ctx, msg.UUID)
-	if !transaction.From.Empty() {
+	if transaction.From.Empty() {
 		return sdk.ErrUnauthorized("No transaction found.").Result()
 	}
 	transaction.TxID = msg.TxID

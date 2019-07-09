@@ -107,24 +107,8 @@ func transactionsHandler(cliCtx context.CLIContext, storeName string) http.Handl
 	}
 }
 
-type pubkey struct {
-	Type  string `json:"type"`
-	Value string `json:"value"`
-}
-
-type signature struct {
-	PubKey    pubkey `json:"pub_key,omitempty"`
-	Signature string `json:"signature"`
-}
-
 type multiSign struct {
-	PubKeys       []string            `json:"pub_keys"`
-	MinSigTx      int                 `json:"min_sig_tx"`
-	Signatures    []signature         `json:"signatures"`
-	Tx            unsignedTransaction `json:"unsigned_tx"`
-	ChainID       string              `json:"chain_id"`
-	AccountNumber uint64              `json:"account_number"`
-	Sequence      uint64              `json:"sequence"`
+	Signatures []string `json:"signatures"`
 }
 
 func multiSignHandler(cliCtx context.CLIContext) http.HandlerFunc {
@@ -139,9 +123,9 @@ func multiSignHandler(cliCtx context.CLIContext) http.HandlerFunc {
 		// public key was in the list of public keys were used to create the
 		// multisig wallet.
 		signatures := make([]string, len(req.Signatures))
-		for i, stdSig := range req.Signatures {
+		for i, siggy := range req.Signatures {
 			if i < (len(req.Signatures) - 1) {
-				sig := []byte(stdSig.Signature)
+				sig := []byte(siggy)
 				// since we are not the last signature, make edits...
 				// remove the '==' at the end of the string
 				sig = sig[:len(sig)-2]
@@ -149,12 +133,12 @@ func multiSignHandler(cliCtx context.CLIContext) http.HandlerFunc {
 				sig[len(sig)-1] += 1
 				signatures[i] = string(sig)
 			} else {
-				signatures[i] = stdSig.Signature
+				signatures[i] = siggy
 			}
 		}
 
-		// prepend base string "CgUIAxIB4B"
-		signatures = append([]string{"CgUIAxIB4B"}, signatures...)
+		// prepend base string "CgUIAhIBwB"
+		signatures = append([]string{"CgUIAhIBwB"}, signatures...)
 		multisignature := strings.Join(signatures[:], "JA")
 
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -293,11 +277,12 @@ func createTransactionHandler(cliCtx context.CLIContext) http.HandlerFunc {
 }
 
 type signTransaction struct {
-	BaseReq   rest.BaseReq `json:"base_req"`
-	UUID      string       `json:"uuid"`
-	Signature string       `json:"signature"`
-	PubKey    string       `json:"pub_key"`
-	Signers   []string     `json:"signers"`
+	BaseReq      rest.BaseReq `json:"base_req"`
+	UUID         string       `json:"uuid"`
+	Signature    string       `json:"signature"`
+	PubKey       string       `json:"pub_key"`
+	PubKeyBase64 string       `json:"pub_key_base64"`
+	Signers      []string     `json:"signers"`
 }
 
 func signTransactionHandler(cliCtx context.CLIContext) http.HandlerFunc {
@@ -325,7 +310,7 @@ func signTransactionHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			}
 		}
 		// create the message
-		msg := mtypes.NewMsgSignTransaction(req.UUID, req.PubKey, req.Signature, signers)
+		msg := mtypes.NewMsgSignTransaction(req.UUID, req.PubKey, req.PubKeyBase64, req.Signature, signers)
 		err = msg.ValidateBasic()
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())

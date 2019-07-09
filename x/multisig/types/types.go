@@ -79,8 +79,9 @@ func (w MultiSigWallet) String() string {
 }
 
 type Signature struct {
-	PubKey    string `json:"pub_key"`
-	Signature string `json:"signature"`
+	PubKey       string `json:"pub_key"`
+	PubKeyBase64 string `json:"pub_key_base64"`
+	Signature    string `json:"signature"`
 }
 
 type Transaction struct {
@@ -105,14 +106,13 @@ func NewTransaction(from, to sdk.AccAddress, coins sdk.Coins, height int64, sign
 }
 
 // adds a signature to Transaction. If signature already exists, overwrite
-func (t *Transaction) AddSignature(pubkey, signature string) error {
-	fmt.Printf("Adding Sig: %s --> %s\n\n", pubkey, signature)
-	fmt.Printf("Transaction: %+v\n", t)
+func (t *Transaction) AddSignature(pubkey, pubkey_base64, signature string) error {
 	for i, sig := range t.Signatures {
 		fmt.Println(pubkey)
 		fmt.Println(sig.PubKey)
 		if sig.PubKey == pubkey {
 			t.Signatures[i].Signature = signature
+			t.Signatures[i].PubKeyBase64 = pubkey_base64
 			return nil
 		}
 	}

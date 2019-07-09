@@ -115,19 +115,21 @@ func (msg MsgCreateTransaction) GetSigners() []sdk.AccAddress {
 
 // MsgSignTransaction defines a SignTransaction message
 type MsgSignTransaction struct {
-	PubKey    string           `json:"pubkey"`
-	Signature string           `json:"signature"`
-	Signers   []sdk.AccAddress `json:"signers"`
-	UUID      string           `json:"uuid"`
+	PubKey       string           `json:"pubkey"`
+	PubKeyBase64 string           `json:"pubkey_base64"`
+	Signature    string           `json:"signature"`
+	Signers      []sdk.AccAddress `json:"signers"`
+	UUID         string           `json:"uuid"`
 }
 
 // NewMsgSignTransaction is a constructor function for MsgCreateTransaction
-func NewMsgSignTransaction(uid, pubkey, sig string, signers []sdk.AccAddress) MsgSignTransaction {
+func NewMsgSignTransaction(uid, pubkey, pubkey_base64, sig string, signers []sdk.AccAddress) MsgSignTransaction {
 	return MsgSignTransaction{
-		UUID:      uid,
-		PubKey:    pubkey,
-		Signature: sig,
-		Signers:   signers,
+		UUID:         uid,
+		PubKey:       pubkey,
+		PubKeyBase64: pubkey_base64,
+		Signature:    sig,
+		Signers:      signers,
 	}
 }
 
@@ -144,6 +146,9 @@ func (msg MsgSignTransaction) ValidateBasic() sdk.Error {
 	}
 	if msg.PubKey == "" {
 		return sdk.ErrUnknownRequest("Pubkey cannot be blank")
+	}
+	if msg.PubKeyBase64 == "" {
+		return sdk.ErrUnknownRequest("Pubkey (base64) cannot be blank")
 	}
 	if msg.Signature == "" {
 		return sdk.ErrUnknownRequest("Signature cannot be blank")

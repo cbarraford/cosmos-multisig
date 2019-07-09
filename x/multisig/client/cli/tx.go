@@ -133,14 +133,16 @@ func GetCmdCreateTransaction(cdc *codec.Codec) *cobra.Command {
 // GetCmdSignTransaction is the CLI command for saving a transaction signature
 func GetCmdSignTransaction(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "save-transaction-signature [uuid] [pubkey] [signature] [signers]",
+		Use:   "save-transaction-signature [uuid] [pubkey] [pubkey_base64] [signature] [signers]",
 		Short: "Save a signature generated for a specific transaction",
-		Args:  cobra.ExactArgs(4),
+		Args:  cobra.ExactArgs(5),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var err error
 			cliCtx := context.NewCLIContext().WithCodec(cdc).WithAccountDecoder(cdc)
 
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+
+			// TODO: compute base64 encoding of pubkey
 
 			addrs := strings.Split(args[3], ",")
 			signers := make([]sdk.AccAddress, len(addrs))
@@ -151,7 +153,7 @@ func GetCmdSignTransaction(cdc *codec.Codec) *cobra.Command {
 				}
 			}
 
-			msg := types.NewMsgSignTransaction(args[0], args[1], args[2], signers)
+			msg := types.NewMsgSignTransaction(args[0], args[1], args[3], args[4], signers)
 			if err != nil {
 				return err
 			}
