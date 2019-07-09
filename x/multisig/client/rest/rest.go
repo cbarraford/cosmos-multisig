@@ -139,20 +139,20 @@ func multiSignHandler(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		var totalPrefix string
-		switch len(slots) {
+		switch len(req.Slots) {
 		case 2:
 			totalPrefix = "Ah"
-			slots = fmt.Printf("%s0", slots)
+			req.Slots = fmt.Sprintf("%s0", req.Slots)
 		case 3:
 			totalPrefix = "Ax"
 		//case 4:
 		//totalPrefix = "BB"
 		default:
-			rest.WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("Number of public keys (%d) in this wallet is not currently supported", len(slots)))
+			rest.WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("Number of public keys (%d) in this wallet is not currently supported", len(req.Slots)))
 		}
 
 		var sigPrefix string
-		switch slots {
+		switch req.Slots {
 		case "001":
 			sigPrefix = "IB"
 		case "010":
@@ -168,7 +168,7 @@ func multiSignHandler(cliCtx context.CLIContext) http.HandlerFunc {
 		case "111":
 			sigPrefix = "4B"
 		default:
-			rest.WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("Number of public keys (%d) in this wallet is not currently supported", len(slots)))
+			rest.WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("Number of public keys (%d) in this wallet is not currently supported", len(req.Slots)))
 		}
 
 		prefix := fmt.Sprintf("CgUI%sIB%s", totalPrefix, sigPrefix)
