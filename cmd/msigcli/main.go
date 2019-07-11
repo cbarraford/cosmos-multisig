@@ -30,9 +30,9 @@ func main() {
 
 	// Read in the configuration file for the sdk
 	config := sdk.GetConfig()
-	config.SetBech32PrefixForAccount("tbnb", "tbnbp")
-	config.SetBech32PrefixForValidator("tbnbv", "tbnbvp")
-	config.SetBech32PrefixForConsensusNode("tbnbc", "tbnbcp")
+	config.SetBech32PrefixForAccount("msig", "msigp")
+	config.SetBech32PrefixForValidator("msigv", "msigvp")
+	config.SetBech32PrefixForConsensusNode("msigc", "msigcp")
 	config.Seal()
 
 	rootCmd := &cobra.Command{

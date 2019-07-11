@@ -27,9 +27,9 @@ func main() {
 	cdc := app.MakeCodec()
 
 	config := sdk.GetConfig()
-	config.SetBech32PrefixForAccount("tbnb", "tbnbp")
-	config.SetBech32PrefixForValidator("tbnbv", "tbnbvp")
-	config.SetBech32PrefixForConsensusNode("tbnbc", "tbnbcp")
+	config.SetBech32PrefixForAccount("msig", "msigp")
+	config.SetBech32PrefixForValidator("msigv", "msigvp")
+	config.SetBech32PrefixForConsensusNode("msigc", "msigcp")
 	config.Seal()
 
 	ctx := server.NewDefaultContext()
