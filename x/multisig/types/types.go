@@ -15,10 +15,10 @@ import (
 // MultiSigWallet is a struct that contains all the metadata of a multiple
 // signature wallet
 type MultiSigWallet struct {
-	Name     string         `json:"name"`
-	MinSigTx int            `json:"min_sig_tx"`
-	Address  sdk.AccAddress `json:"address"`
-	PubKeys  []string       `json:"pub_keys"`
+	Name     string         `json:"name"`       // name of wallet
+	MinSigTx int            `json:"min_sig_tx"` // minimum number of signatures for a transaction
+	Address  sdk.AccAddress `json:"address"`    // address of the wallet
+	PubKeys  []string       `json:"pub_keys"`   // pubkeys of regular accounts to be used for signing transactions on this multisig wallet.
 }
 
 func createAddress(name string) (sdk.AccAddress, error) {
@@ -89,8 +89,8 @@ type Transaction struct {
 	From       sdk.AccAddress `json:"from_address"`
 	To         sdk.AccAddress `json:"to_address"`
 	Coins      sdk.Coins      `json:"coins"`
-	Signatures []Signature    `json:"signatures"`
-	TxID       string         `json:"tx_id"`
+	Signatures []Signature    `json:"signatures"` // pubkey signatures
+	TxID       string         `json:"tx_id"`      // tx hash given by cosmos once transaction is completed
 	CreatedAt  int64          `json:"created_at"` // block height
 }
 
