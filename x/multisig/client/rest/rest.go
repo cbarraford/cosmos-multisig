@@ -42,7 +42,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 	r.HandleFunc(fmt.Sprintf("/%s/transaction", storeName), createTransactionHandler(cliCtx)).Methods("POST")
 	r.HandleFunc(fmt.Sprintf("/%s/transaction/sign", storeName), signTransactionHandler(cliCtx)).Methods("POST")
 	r.HandleFunc(fmt.Sprintf("/%s/transaction/complete", storeName), completeTransactionHandler(cliCtx)).Methods("POST")
-	r.HandleFunc(fmt.Sprintf("/%s/tx", storeName), createUnsignedTransactionHandler(cliCtx)).Methods("PUT")
+	//r.HandleFunc(fmt.Sprintf("/%s/tx", storeName), createUnsignedTransactionHandler(cliCtx)).Methods("PUT")
 	r.HandleFunc(fmt.Sprintf("/%s/sign/multi", storeName), multiSignHandler(cliCtx)).Methods("POST")
 
 	r.HandleFunc(fmt.Sprintf("/%s/broadcast", storeName), broadcastTxRequest(cliCtx)).Methods("POST")
