@@ -55,7 +55,7 @@ func GetCmdWallet(queryRoute string, cdc *codec.Codec) *cobra.Command {
 func GetCmdWallets(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "query-wallets [pub_key]",
-		Short: "wallets",
+		Short: "Query for a list of wallets by public key",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
@@ -103,7 +103,7 @@ func GetCmdTransaction(queryRoute string, cdc *codec.Codec) *cobra.Command {
 func GetCmdTransactions(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "query-transactions [wallet_address]",
-		Short: "transactions",
+		Short: "Query for a list of transaction by wallet address",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
